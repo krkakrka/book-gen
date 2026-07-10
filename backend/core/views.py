@@ -1,5 +1,6 @@
 from django.contrib.auth import authenticate, login, logout
 from django.db import connection
+from django.middleware.csrf import get_token
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -36,3 +37,9 @@ def login_view(request):
 def logout_view(request):
     logout(request)
     return Response(status=204)
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def csrf_view(request):
+    return Response({"detail": get_token(request)})

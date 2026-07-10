@@ -4,7 +4,7 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from rest_framework import status
-from rest_framework.test import APITestCase
+from rest_framework.test import APIClient, APITestCase
 
 DEV_USER_EMAIL = "parent@home.com"
 DEV_USER_PASSWORD = "storyseed-dev"
@@ -90,3 +90,46 @@ class LogoutTests(APITestCase):
     def test_logout_while_not_logged_in_returns_403(self):
         response = self.client.post("/api/auth/logout/")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class CsrfTokenTests(APITestCase):
+    def test_csrf_endpoint_returns_200_and_sets_csrf_cookie(self):
+        response = self.client.get("/api/auth/csrf/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("csrftoken", response.cookies)
+        self.assertTrue(response.cookies["csrftoken"].value)
+
+    def test_csrf_cookie_satisfies_csrf_middleware_on_subsequent_unsafe_request(self):
+        # Default APITestCase client has enforce_csrf_checks=False, which would
+        # let an unsafe request through even with a missing/wrong CSRF token —
+        # use an explicit client with enforcement on so this test actually
+        # proves the cookie round-trip works against CsrfViewMiddleware.
+        client = APIClient(enforce_csrf_checks=True)
+
+        client.get("/api/auth/csrf/")
+
+        login_response = client.post(
+            "/api/auth/login/",
+            {"email": DEV_USER_EMAIL, "password": DEV_USER_PASSWORD},
+            format="json",
+        )
+        self.assertEqual(login_response.status_code, status.HTTP_200_OK)
+
+        # login() rotates the CSRF token, so read the cookie again post-login
+        # rather than reusing the value fetched before authenticating.
+        csrf_token = client.cookies["csrftoken"].value
+        logout_response = client.post(
+            "/api/auth/logout/", HTTP_X_CSRFTOKEN=csrf_token
+        )
+        self.assertEqual(logout_response.status_code, status.HTTP_204_NO_CONTENT)
+
+
+class CorsHeadersTests(APITestCase):
+    def test_allowed_origin_receives_cors_headers(self):
+        response = self.client.get(
+            "/api/health/", HTTP_ORIGIN="http://localhost:3000"
+        )
+        self.assertEqual(
+            response["Access-Control-Allow-Origin"], "http://localhost:3000"
+        )
+        self.assertEqual(response["Access-Control-Allow-Credentials"], "true")

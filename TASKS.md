@@ -579,3 +579,154 @@ underneath once it succeeds — see `LOOP.md`'s "Artifacts & lifecycle".
 
   </details>
 
+- [x] Add CORS + CSRF plumbing to the Django backend so the Next.js dev server (`localhost:3000`) can make credentialed requests to the API (`localhost:8000`): `django-cors-headers` with `CORS_ALLOWED_ORIGINS`/`CORS_ALLOW_CREDENTIALS`, `CSRF_TRUSTED_ORIGINS`, a same-site-friendly session/CSRF cookie config for local dev, and a way for the frontend to obtain a CSRF token before its first unsafe (`POST`/`PATCH`/`DELETE`) request (e.g. a `GET` endpoint that calls `django.middleware.csrf.get_token`) — backend-only, no frontend changes; unblocks the login-wiring and API-client tasks below, both of which need to send cookies/CSRF headers cross-origin.
+
+  <details><summary>plan</summary>
+
+  # Plan — CORS + CSRF plumbing for cross-origin credentialed requests
+  
+  ## Goal
+  Let the Next.js dev server (`localhost:3000`) make credentialed (`fetch(..., {credentials:
+  "include"})`) requests to the Django API (`localhost:8000`): CORS headers via
+  `django-cors-headers`, `CSRF_TRUSTED_ORIGINS`, same-site-friendly session/CSRF cookies for
+  local dev, and a `GET` endpoint the frontend can hit first to receive a CSRF cookie before
+  its first `POST`/`PATCH`/`DELETE`. **Backend-only** — no changes to `app/`, `components/`,
+  or `lib/`. This directly resolves the "flagging, not solving" note left in the auth task's
+  plan (`TASKS.md`, login/logout task): `login_view` currently skips `SessionAuthentication`
+  entirely because there's no way yet for a client to have a CSRF cookie before it's
+  authenticated; this task adds that bootstrap without touching `login_view`/`logout_view`
+  themselves.
+  
+  ## Why cross-origin cookies need explicit config
+  Browsers only send/accept cookies cross-origin (`:3000` → `:8000` is cross-origin — different
+  port) when: (1) the response has a specific `Access-Control-Allow-Origin` (not `*`) plus
+  `Access-Control-Allow-Credentials: true`, and the request opts in with `credentials:
+  "include"`; (2) cookies aren't blocked by `SameSite`. `SameSite` is scoped to
+  scheme+registrable-domain ("site"), not full origin, so `http://localhost:3000` and
+  `http://localhost:8000` are cross-*origin* but same-*site* — `SameSite=Lax` (Django's
+  default) already permits the cookie on these fetches, so no cookie-attribute relaxation is
+  needed for this same-machine-different-port setup. `CORS_ALLOW_CREDENTIALS=True` is still
+  required separately, for the JS-visible `fetch` call itself to succeed rather than being
+  blocked by CORS. Both are set explicitly below rather than left as unstated defaults, so the
+  reasoning is visible in code.
+  
+  ## Dependency
+  Add `django-cors-headers` to `backend/requirements.txt` (alphabetical-ish, next to
+  `djangorestframework`).
+  
+  ## Settings changes (`backend/config/settings/base.py`)
+  
+  - **`INSTALLED_APPS`**: add `"corsheaders"` (before `"core"`/`"books"`, position doesn't
+    matter for apps without templates — placing near `"django.contrib.staticfiles"` per the
+    package's own install docs).
+  - **`MIDDLEWARE`**: insert `"corsheaders.middleware.CorsMiddleware"` as high as possible —
+    directly after `SecurityMiddleware`, before `CommonMiddleware` — per `django-cors-headers`
+    docs (it must run before `CommonMiddleware` so preflight `OPTIONS` responses get CORS
+    headers before any other middleware could short-circuit the request).
+  - **New CORS/CSRF block**, env-driven with local-dev defaults (matching the existing
+    `POSTGRES_*` / `DJANGO_DEV_USER_*` convention of `os.environ.get(..., "<dev default>")`):
+    ```python
+    CORS_ALLOWED_ORIGINS = os.environ.get(
+        "CORS_ALLOWED_ORIGINS", "http://localhost:3000"
+    ).split(",")
+    CORS_ALLOW_CREDENTIALS = True
+  
+    CSRF_TRUSTED_ORIGINS = os.environ.get(
+        "CSRF_TRUSTED_ORIGINS", "http://localhost:3000"
+    ).split(",")
+    ```
+    Splitting a comma-separated env var (rather than hardcoding the list) matches how a
+    future non-dev environment would override it without a settings-file change — consistent
+    with existing env-var-driven config, not a speculative addition since `CLAUDE.md`/
+    `ARCHITECTURE.md` already establish a local/base settings split with env overrides.
+  - **Cookie config** (same-site-friendly for local dev, explicit rather than relying on
+    Django defaults so the reasoning above is visible in code):
+    ```python
+    SESSION_COOKIE_SAMESITE = "Lax"
+    CSRF_COOKIE_SAMESITE = "Lax"
+    SESSION_COOKIE_SECURE = False   # plain http://localhost in dev
+    CSRF_COOKIE_SECURE = False
+    CSRF_COOKIE_HTTPONLY = False    # must be JS-readable so the frontend can echo it in X-CSRFToken
+    ```
+    `CSRF_COOKIE_HTTPONLY = False` is Django's default already (calling it out explicitly
+    since it's load-bearing for the get-token endpoint below to be useful — a frontend can't
+    read an HttpOnly cookie to put it in a request header).
+  
+  No changes to `config/settings/local.py` — the new settings are dev-safe defaults in
+  `base.py` itself (same pattern as `DATABASES`), not `local.py`-only.
+  
+  ## New endpoint: `GET /api/auth/csrf/`
+  
+  Lives in `core/` (same app as `login_view`/`logout_view` — no new app, this is auth
+  plumbing, not a domain concern).
+  
+  `backend/core/views.py`, appended:
+  ```python
+  from django.middleware.csrf import get_token
+  
+  
+  @api_view(["GET"])
+  @permission_classes([AllowAny])
+  def csrf_view(request):
+      return Response({"detail": get_token(request)})
+  ```
+  Calling `get_token(request)` is what makes Django set the `csrftoken` cookie on the
+  response (it's a side effect of the call, not just a return value) — this is the
+  documented pattern for SPA/cross-origin CSRF bootstrapping. `AllowAny` since this must be
+  callable *before* login (a client has no session yet at this point). Response body is
+  included as a convenience/debugging aid but the cookie is what the frontend actually needs
+  to read (`document.cookie`) to populate the `X-CSRFToken` header on its next unsafe
+  request — Django's `CsrfViewMiddleware` accepts that header name by default
+  (`CSRF_HEADER_NAME`, unchanged).
+  
+  `backend/core/urls.py`, add one line:
+  ```python
+  path("auth/csrf/", views.csrf_view, name="auth-csrf"),
+  ```
+  alongside the existing `auth/login/`/`auth/logout/` entries. Final route: `/api/auth/csrf/`.
+  
+  ## Out of scope (explicitly, per task)
+  - No frontend changes — fetching `/api/auth/csrf/` and sending `X-CSRFToken` back is the
+    *next* task's job (`login-wiring`), which this task unblocks but does not do.
+  - No change to `login_view`'s `@authentication_classes([])` CSRF-exemption — that stays as
+    is; the login-wiring task decides whether to route the CSRF-fetch-then-login flow through
+    the now-available cookie or leave login exempt permanently. Not deciding that here.
+  - No production/HTTPS cookie settings (`Secure=True`, real trusted-origin domains) — out of
+    scope per "local dev" framing in the task description; a `production.py` settings module
+    doesn't exist yet (per the scaffold task's plan, deliberately deferred).
+  - No changes to `/api/books/` permissions or `BookViewSet`.
+  
+  ## Tests (`backend/core/tests.py`, appended — existing tests untouched)
+  Real Postgres test DB per project convention (no mocking):
+  - **`CsrfTokenTests`**
+    - `GET /api/auth/csrf/` → `200`; response sets a `csrftoken` cookie
+      (`response.cookies["csrftoken"]` present and non-empty).
+    - A subsequent unsafe request (e.g. `POST /api/auth/logout/` while authenticated, or a
+      lightweight `books` POST) made through Django's test client with
+      `enforce_csrf_checks=True`, using the cookie value in the `X-CSRFToken` header, is not
+      rejected for CSRF (i.e. proves the round-trip actually satisfies
+      `CsrfViewMiddleware` — the default test client has `enforce_csrf_checks=False`, so
+      this test must construct a client with it explicitly on to be meaningful).
+  - **CORS smoke check**: a request with an `Origin: http://localhost:3000` header to
+    `GET /api/health/` gets back `Access-Control-Allow-Origin: http://localhost:3000` and
+    `Access-Control-Allow-Credentials: true` in the response headers.
+  
+  ## Verification (manual, part of implementation stage)
+  1. `cd backend && source .venv/bin/activate && pip install -r requirements.txt`
+  2. `python manage.py test core`
+  3. `python manage.py runserver`, then from a terminal:
+     `curl -i -H "Origin: http://localhost:3000" localhost:8000/api/health/` → response
+     includes `Access-Control-Allow-Origin: http://localhost:3000`.
+     `curl -i -c cookies.txt localhost:8000/api/auth/csrf/` → `200`, `Set-Cookie: csrftoken=...`.
+
+  </details>
+
+
+- [ ] Wire `/login` to the real backend: replace `LoginForm`'s simulated "any input proceeds" submit with a `POST /api/auth/login/` call (crediting the CSRF/cookie plumbing from the previous task), show an inline error for a `400` (invalid credentials) instead of navigating away, and only call `router.push("/library")` on a real `200`; wire `AppHeader`'s `signout-button` to `POST /api/auth/logout/` before navigating to `/login`. Update `PROJECT.md`'s "What's simulated vs. real" section in the same change, since it currently says auth is "a visual gate only" — that's no longer accurate once this lands. Does not touch `/api/books/` or `lib/storage.ts`.
+
+- [ ] Add a route guard so `/library`, `/create`, `/edit/[id]`, and `/book/[id]` redirect to `/login` for anyone without a valid session (today they render freely for any deep link, since login is purely simulated) — needs a small new backend "who am I" endpoint (e.g. `GET /api/auth/session/` → `200` with the user, or `401`) since there's no way to inspect a Django session cookie from the client otherwise, plus a client-side check (layout-level effect or shared hook) that redirects on `401`. Builds on the login-wiring task; keep the check narrowly scoped to these four routes so `/login` itself doesn't loop.
+
+- [ ] Gate `/api/books/` behind authentication: add `permission_classes = [IsAuthenticated]` (DRF session auth) to `BookViewSet` in `backend/books/views.py`, which currently has none and so falls back to DRF's global `AllowAny` default — this was explicitly flagged as a follow-up in the login/logout task's plan ("Flagging gating `/api/books/` behind auth as a reasonable next `TASKS.md` item rather than deciding it here") but never turned into an item. Update the existing `books/tests.py` `APITestCase`s, which currently assume unauthenticated access, to log in as the seeded dev user first. Backend-only — no frontend changes. Must land before the `lib/storage.ts` API-client task below, which already assumes `/api/books/` requires an authenticated, credentialed request.
+
+- [ ] Replace `lib/storage.ts`'s `localStorage`-backed persistence with a thin API client against `/api/books/` (list/create/retrieve/update/delete), translating the DRF wire shape (`valueId`/`styleId`/`value`/`accent`/`createdAt`/`updatedAt`) to and from `lib/types.ts`'s `Book`/`Section` shapes per `ARCHITECTURE.md`'s "frontend/backend models are related but not identical" note; update `app/library/page.tsx`, `app/book/[id]/page.tsx`, and `components/CreateWizard.tsx` (shared by `/create` and `/edit/[id]`) to call it instead of `loadOrSeedBooks`/`upsertBook`/`persistBooks`/`deleteBookById`. Flag rather than silently decide: whether the 3 sample books still get seeded client-side against an empty backend, or move to a backend seed migration like `Value`/`Style` did. Requires the auth/CSRF work above to be in place first since these become authenticated, credentialed requests.
+
