@@ -13,7 +13,9 @@ next-env.d.ts
 /build
 
 # agent loop
+/.loop/
 /.agent-loop/
+/plan.md
 
 # testing (jest)
 /coverage
