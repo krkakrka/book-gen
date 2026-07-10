@@ -15,7 +15,7 @@ This project follows a spec-first SDLC (adapted from the "New SDLC with vibe cod
 1. **Requirements — already done.** `PROJECT.md` (product) and `TEST_CONTRACT.md` (behavior/selectors) are the spec. If either seems wrong or incomplete for what you're implementing, fix the doc in the same change rather than quietly diverging from it in code.
 2. **Architecture — human-owned.** Stack and structural decisions live in `ARCHITECTURE.md`. Implement against it; if a task seems to require a different structural choice (new dependency, new data shape, dropping the "no backend" constraint), raise it rather than deciding unilaterally.
 3. **Implementation — the actual task here.** Fill in `app/` and `components/` against `lib/` + `TEST_CONTRACT.md` + `design/README.md`. Guardrails: never edit `__tests__/`, `e2e/`, or `lib/` to make something pass; never rename a `data-testid` without updating its test in the same change.
-4. **Testing/QA — the acceptance bar is green tests, not a manual demo.** `pnpm test`, `pnpm typecheck`, and `pnpm test:e2e` (in that order — see `scripts/agent-loop.sh`) are the eval suite. A page that "looks right" but fails a test is not done.
+4. **Testing/QA — the acceptance bar is green tests, not a manual demo.** `pnpm test`, `pnpm typecheck`, and `pnpm test:e2e` (in that order — see `scripts/loop.sh`) are the eval suite. A page that "looks right" but fails a test is not done.
 5. **Review** — run `/code-review` on the diff before considering a change finished.
 6. **Maintenance** — once a view's tests are green, its behavior is pinned; refactors are safe as long as the suite stays green.
 
@@ -41,7 +41,7 @@ Playwright auto-starts the dev server (`playwright.config.ts` `webServer`), so y
 
 ### Agent loop
 
-`scripts/agent-loop.sh` drives the red-spec loop unattended: each iteration runs Jest + typecheck and feeds failures back to `claude -p`; once those are green it runs Playwright e2e as the final gate. `MAX_ITERS`, `CLAUDE_BIN`, `CLAUDE_MODEL`, and `SKIP_E2E=1` are env-var knobs. It uses `--dangerously-skip-permissions`, so run it only in a trusted working copy.
+`scripts/loop.sh` drives one task at a time from `TASKS.md` — see `LOOP.md` for the full design. It plans first (writes `plan.md`), blocks on your approval before touching any code, then implements and iterates a bash-checked test loop (feeding failures back into the same resumed session) followed by a fresh-context code review (`review-result.json`), repeating until both are clean or `MAX_ITERS` is hit. It does not sweep the backlog or run unattended across multiple tasks — that's a deliberate v1 scope limit. `MAX_ITERS`, `CLAUDE_BIN`, `CLAUDE_MODEL`, and `SKIP_E2E=1` are env-var knobs. It uses `--dangerously-skip-permissions`, so run it only in a trusted working copy.
 
 ## Architecture
 
