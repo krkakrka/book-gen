@@ -1,6 +1,6 @@
 # Storyseed
 
-A children's picture-book creator & reader. Next.js (App Router) + React + TypeScript. No backend — books persist in the browser's `localStorage`.
+A children's picture-book creator & reader. Next.js (App Router) + React + TypeScript frontend, with a Django + DRF + PostgreSQL backend (`backend/`) for persistence and session auth.
 
 ## Getting started
 
@@ -16,6 +16,36 @@ pnpm typecheck
 pnpm lint
 pnpm build
 ```
+
+## Backend
+
+The Django project lives in `backend/`, as a sibling app directory to the Next.js frontend (not a monorepo tool). It requires a local PostgreSQL instance.
+
+```bash
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate       # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+
+cp .env.example .env            # then adjust DB/dev-user credentials as needed
+# create the Postgres role/db to match .env, e.g.:
+#   createuser storyseed && createdb storyseed_dev -O storyseed
+
+python manage.py migrate        # also seeds a dev user (see .env for email/password)
+python manage.py runserver      # → http://localhost:8000
+```
+
+Key endpoints (mounted under `/api/`):
+
+| Endpoint | What it does |
+|---|---|
+| `GET /api/health/` | DB connectivity check |
+| `POST /api/auth/login/` | Session login (`email`, `password`) — seeded dev user from `.env` |
+| `POST /api/auth/logout/` | Session logout |
+| `/api/books/` | DRF `BookViewSet` (list/retrieve/create/update/delete) |
+| `/admin/` | Django admin |
+
+Run the backend test suite with `python manage.py test` from `backend/`.
 
 ## Project status
 
