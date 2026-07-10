@@ -1,0 +1,17 @@
+[
+  {
+    "model": "books.style",
+    "pk": "crayon",
+    "fields": { "name": "Crayon Doodle", "desc": "warm, hand-drawn, sunny" }
+  },
+  {
+    "model": "books.style",
+    "pk": "cutout",
+    "fields": { "name": "Paper Cut-out", "desc": "bold flat shapes, playful" }
+  },
+  {
+    "model": "books.style",
+    "pk": "watercolor",
+    "fields": { "name": "Soft Watercolor", "desc": "dreamy washes of color" }
+  }
+]

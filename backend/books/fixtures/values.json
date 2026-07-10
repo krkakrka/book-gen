@@ -1,0 +1,47 @@
+[
+  {
+    "model": "books.value",
+    "pk": "courage",
+    "fields": { "name": "Courage", "color": "#2E6BFF", "short": "being brave", "desc": "Someone who tries even when they feel scared or unsure." }
+  },
+  {
+    "model": "books.value",
+    "pk": "kindness",
+    "fields": { "name": "Kindness", "color": "#FF4D6D", "short": "caring", "desc": "Someone who cares about how others feel and helps them." }
+  },
+  {
+    "model": "books.value",
+    "pk": "honesty",
+    "fields": { "name": "Honesty", "color": "#2BC48A", "short": "truthful", "desc": "Someone who tells the truth, even when it is hard." }
+  },
+  {
+    "model": "books.value",
+    "pk": "patience",
+    "fields": { "name": "Patience", "color": "#9B6BFF", "short": "calm waiting", "desc": "Someone who can wait calmly without getting upset." }
+  },
+  {
+    "model": "books.value",
+    "pk": "generosity",
+    "fields": { "name": "Generosity", "color": "#FF8A3D", "short": "sharing", "desc": "Someone who loves to share what they have with others." }
+  },
+  {
+    "model": "books.value",
+    "pk": "perseverance",
+    "fields": { "name": "Perseverance", "color": "#00BBD1", "short": "never giving up", "desc": "Someone who keeps trying and does not give up easily." }
+  },
+  {
+    "model": "books.value",
+    "pk": "responsibility",
+    "fields": { "name": "Responsibility", "color": "#C879FF", "short": "follows through", "desc": "Someone who takes ownership and follows through on what they promise." }
+  },
+  {
+    "model": "books.value",
+    "pk": "empathy",
+    "fields": { "name": "Empathy", "color": "#FF6FB5", "short": "understanding", "desc": "Someone who understands and shares the feelings of others." }
+  },
+  {
+    "model": "books.value",
+    "pk": "gratitude",
+    "fields": { "name": "Gratitude", "color": "#7BC043", "short": "thankful", "desc": "Someone who notices good things and remembers to say thank you." }
+  }
+]
