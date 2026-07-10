@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    html, body { margin:0; padding:0; }
+    * { box-sizing:border-box; }
+    textarea, input { font-family:'Poppins',sans-serif; }
+    ::selection { background:#FFD23F; }
+    @keyframes ss-pop { 0%{ transform:scale(.96); opacity:0; } 100%{ transform:scale(1); opacity:1; } }
+    @keyframes ss-fade { 0%{ opacity:0; transform:translateY(8px); } 100%{ opacity:1; transform:translateY(0); } }
+    @keyframes ss-page { 0%{ opacity:0; transform:translateX(var(--ss-dir,14px)) rotate(.4deg); } 100%{ opacity:1; transform:translateX(0) rotate(0); } }
+  </style>
+</helmet>
+
+<div style="min-height:100vh; background:#FFFDF7; font-family:'Poppins',sans-serif; color:#1E1B2E; overflow-x:hidden;">
+
+  <sc-if value="{{ isLogin }}" hint-placeholder-val="{{ true }}">
+    <div style="min-height:100vh; display:flex; flex-wrap:wrap;">
+      <div style="flex:1 1 420px; background:#FFD23F; border-right:4px solid #1E1B2E; position:relative; overflow:hidden; display:flex; flex-direction:column; justify-content:center; padding:clamp(36px,6vw,80px);">
+        <span style="position:absolute; top:-60px; right:-40px; width:220px; height:220px; border-radius:50%; background:#FF4D6D; border:4px solid #1E1B2E;"></span>
+        <span style="position:absolute; bottom:40px; right:60px; width:120px; height:120px; border-radius:24px; background:#2E6BFF; border:4px solid #1E1B2E; transform:rotate(12deg);"></span>
+        <span style="position:absolute; bottom:-50px; left:-30px; width:160px; height:160px; border-radius:50%; background:#2BC48A; border:4px solid #1E1B2E;"></span>
+        <div style="position:relative; z-index:2;">
+          <div style="display:flex; align-items:center; gap:14px; margin-bottom:28px;">
+            <div style="width:54px; height:54px; border-radius:14px; background:#1E1B2E; display:flex; align-items:center; justify-content:center;">
+              <span style="font-family:'Fredoka',sans-serif; font-weight:700; color:#FFD23F; font-size:30px;">S</span>
+            </div>
+            <span style="font-family:'Fredoka',sans-serif; font-weight:700; font-size:32px; color:#1E1B2E;">Storyseed</span>
+          </div>
+          <h1 style="font-family:'Fredoka',sans-serif; font-weight:700; font-size:clamp(34px,5vw,60px); line-height:1.02; margin:0 0 18px; color:#1E1B2E; max-width:9em;">Little stories that grow big hearts.</h1>
+          <p style="font-family:'Poppins',sans-serif; font-weight:500; font-size:clamp(15px,1.8vw,20px); line-height:1.5; margin:0; color:#3a3550; max-width:24em;">Make personalized picture books that teach kids ages 3–6 the values that matter most.</p>
+        </div>
+      </div>
+      <div style="flex:1 1 380px; display:flex; align-items:center; justify-content:center; padding:clamp(28px,5vw,64px); background:#FFFDF7;">
+        <div style="width:100%; max-width:380px;">
+          <h2 style="font-family:'Fredoka',sans-serif; font-weight:700; font-size:30px; margin:0 0 6px;">Welcome back 👋</h2>
+          <p style="font-weight:500; color:#6b6680; margin:0 0 28px; font-size:15px;">Sign in to your story shelf.</p>
+          <label style="display:block; font-weight:700; font-size:13px; margin-bottom:7px;">Email</label>
+          <input value="{{ loginEmail }}" onChange="{{ onLoginEmail }}" placeholder="parent@home.com" style="width:100%; padding:14px 16px; border:3px solid #1E1B2E; border-radius:12px; font-size:15px; font-weight:500; outline:none; margin-bottom:18px; background:#fff;">
+          <label style="display:block; font-weight:700; font-size:13px; margin-bottom:7px;">Password</label>
+          <input type="password" value="{{ loginPass }}" onChange="{{ onLoginPass }}" placeholder="••••••••" style="width:100%; padding:14px 16px; border:3px solid #1E1B2E; border-radius:12px; font-size:15px; font-weight:500; outline:none; margin-bottom:24px; background:#fff;">
+          <button onClick="{{ onLogin }}" style="width:100%; font-family:'Fredoka',sans-serif; font-weight:600; font-size:18px; color:#fff; background:#FF4D6D; border:3px solid #1E1B2E; padding:15px; border-radius:14px; box-shadow:4px 4px 0 #1E1B2E; cursor:pointer;" style-hover="transform:translate(-2px,-2px); box-shadow:6px 6px 0 #1E1B2E;" style-active="transform:translate(2px,2px); box-shadow:1px 1px 0 #1E1B2E;">Sign in</button>
+          <p style="text-align:center; font-weight:500; font-size:13px; color:#9a95ad; margin:18px 0 0;">New here? <span style="color:#2E6BFF; font-weight:700; cursor:pointer;">Create an account</span></p>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isLibrary }}" hint-placeholder-val="{{ false }}">
+    <div>
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; padding:18px clamp(20px,4vw,48px); background:#FFD23F; border-bottom:4px solid #1E1B2E;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div style="width:42px; height:42px; border-radius:12px; background:#1E1B2E; display:flex; align-items:center; justify-content:center;">
+            <span style="font-family:'Fredoka',sans-serif; font-weight:700; color:#FFD23F; font-size:24px;">S</span>
+          </div>
+          <span style="font-family:'Fredoka',sans-serif; font-weight:700; font-size:24px;">Storyseed</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span style="font-family:'Poppins',sans-serif; font-weight:700; font-size:14px; background:#fff; border:2px solid #1E1B2E; padding:8px 16px; border-radius:10px; box-shadow:2px 2px 0 #1E1B2E;">Library</span>
+          <div style="width:40px; height:40px; border-radius:10px; background:#2E6BFF; border:2px solid #1E1B2E; display:flex; align-items:center; justify-content:center; font-family:'Fredoka',sans-serif; font-weight:600; color:#fff; font-size:16px;">{{ userInitial }}</div>
+          <button onClick="{{ onLogout }}" title="Sign out" style="font-family:'Poppins',sans-serif; font-weight:700; font-size:13px; background:transparent; border:none; color:#1E1B2E; cursor:pointer; text-decoration:underline; padding:6px;">Sign out</button>
+        </div>
+      </div>
+
+      <div style="max-width:1240px; margin:0 auto; padding:clamp(28px,4vw,44px) clamp(20px,4vw,48px) 64px;">
+        <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:28px;">
+          <div>
+            <div style="font-family:'Poppins',sans-serif; font-weight:700; font-size:12px; letter-spacing:.1em; color:#FF4D6D; text-transform:uppercase; margin-bottom:6px;">Welcome back, {{ userName }}</div>
+            <h1 style="font-family:'Fredoka',sans-serif; font-weight:700; font-size:clamp(30px,4vw,40px); margin:0;">Your library</h1>
+          </div>
+          <button onClick="{{ onNewStory }}" style="font-family:'Fredoka',sans-serif; font-weight:600; font-size:17px; color:#fff; background:#FF4D6D; border:3px solid #1E1B2E; padding:12px 24px; border-radius:14px; box-shadow:4px 4px 0 #1E1B2E; cursor:pointer;" style-hover="transform:translate(-2px,-2px); box-shadow:6px 6px 0 #1E1B2E;" style-active="transform:translate(2px,2px); box-shadow:1px 1px 0 #1E1B2E;">+ New story</button>
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); gap:24px;">
+          <div onClick="{{ onNewStory }}" style="border:3px solid #1E1B2E; border-radius:18px; background:#fff; min-height:330px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; cursor:pointer; box-shadow:4px 4px 0 #1E1B2E;" style-hover="transform:translate(-2px,-2px); box-shadow:6px 6px 0 #1E1B2E;">
+            <div style="width:56px; height:56px; border-radius:14px; background:#2BC48A; border:3px solid #1E1B2E; display:flex; align-items:center; justify-content:center; font-family:'Fredoka',sans-serif; font-weight:700; font-size:32px; color:#fff;">+</div>
+            <span style="font-family:'Fredoka',sans-serif; font-weight:600; font-size:18px;">Create a story</span>
+            <span style="font-family:'Poppins',sans-serif; font-weight:500; font-size:12px; color:#8a85a0;">teach a value in 5 steps</span>
+          </div>
+
+          <sc-for list="{{ books }}" as="b" hint-placeholder-count="3">
+            <div style="position:relative;">
+              <div onClick="{{ b.onOpen }}" style="cursor:pointer; height:330px;" style-hover="transform:translateY(-5px);">
+                <dc-import name="StoryPage" kind="cover" title="{{ b.title }}" value="{{ b.value }}" accent="{{ b.accent }}" variant="{{ b.styleId }}" style="width:100%; height:100%" hint-size="100%,330px"></dc-import>
+              </div>
+              <div style="position:absolute; top:12px; right:12px; display:flex; gap:7px;">
+                <button onClick="{{ b.onEdit }}" title="Edit" style="width:34px; height:34px; border-radius:9px; background:#fff; border:2px solid #1E1B2E; box-shadow:2px 2px 0 #1E1B2E; cursor:pointer; font-size:15px; line-height:1; display:flex; align-items:center; justify-content:center;" style-hover="background:#FFD23F;">✎</button>
+                <button onClick="{{ b.onDelete }}" title="Delete" style="width:34px; height:34px; border-radius:9px; background:#fff; border:2px solid #1E1B2E; box-shadow:2px 2px 0 #1E1B2E; cursor:pointer; font-size:15px; line-height:1; display:flex; align-items:center; justify-content:center;" style-hover="background:#FF4D6D; color:#fff;">🗑</button>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px; margin-top:12px; padding:0 4px;">
+                <span style="font-family:'Poppins',sans-serif; font-weight:600; font-size:13px; color:#8a85a0;">{{ b.pageCountLabel }}</span>
+                <span style="font-family:'Poppins',sans-serif; font-weight:600; font-size:13px; color:#8a85a0;">·</span>
+                <span style="font-family:'Poppins',sans-serif; font-weight:600; font-size:13px; color:#8a85a0;">{{ b.styleLabel }}</span>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isReader }}" hint-placeholder-val="{{ false }}">
+    <div style="min-height:100vh; display:flex; flex-direction:column; background:#FFF6E0;">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; padding:16px clamp(18px,4vw,40px); background:#fff; border-bottom:4px solid #1E1B2E;">
+        <button onClick="{{ onCloseReader }}" style="font-family:'Fredoka',sans-serif; font-weight:600; font-size:15px; background:#fff; border:3px solid #1E1B2E; padding:9px 18px; border-radius:12px; box-shadow:3px 3px 0 #1E1B2E; cursor:pointer; display:flex; align-items:center; gap:7px;" style-hover="transform:translate(-2px,-2px); box-shadow:5px 5px 0 #1E1B2E;">← Library</button>
+        <div style="text-align:center; min-width:0;">
+          <div style="font-family:'Fredoka',sans-serif; font-weight:600; font-size:clamp(16px,2.2vw,22px); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ readerTitle }}</div>
+          <div style="font-family:'Poppins',sans-serif; font-weight:600; font-size:12px; color:#8a85a0;">{{ readerValue }}</div>
+        </div>
+        <div style="font-family:'Fredoka',sans-serif; font-weight:600; font-size:14px; background:#FFD23F; border:2px solid #1E1B2E; padding:7px 14px; border-radius:999px; white-space:nowrap;">{{ readerPageLabel }}</div>
+      </div>
+
+      <div style="flex:1; display:flex; align-items:center; justify-content:center; gap:clamp(12px,2.5vw,28px); padding:clamp(20px,3.5vw,44px) clamp(14px,3vw,40px);">
+        <button onClick="{{ onPrevPage }}" disabled="{{ atFirstPage }}" style="flex:0 0 auto; width:clamp(52px,7vw,66px); height:clamp(52px,7vw,66px); border-radius:50%; background:{{ prevBtnBg }}; border:3px solid #1E1B2E; box-shadow:3px 3px 0 #1E1B2E; cursor:{{ prevCursor }}; font-size:26px; font-weight:700; color:#1E1B2E; display:flex; align-items:center; justify-content:center;" style-hover="transform:translate(-2px,-2px); box-shadow:5px 5px 0 #1E1B2E;">‹</button>
+        <div style="flex:1 1 auto; max-width:680px; height:min(74vh, 760px);">
+          <dc-import name="StoryPage" kind="{{ rpKind }}" title="{{ readerTitle }}" value="{{ readerValue }}" accent="{{ readerAccent }}" image-desc="{{ rpImageDesc }}" text="{{ rpText }}" variant="{{ readerStyleId }}" page-num="{{ rpNum }}" page-total="{{ readerTotal }}" style="width:100%; height:100%" hint-size="100%,100%"></dc-import>
+        </div>
+        <button onClick="{{ onNextPage }}" disabled="{{ atLastPage }}" style="flex:0 0 auto; width:clamp(52px,7vw,66px); height:clamp(52px,7vw,66px); border-radius:50%; background:{{ nextBtnBg }}; border:3px solid #1E1B2E; box-shadow:3px 3px 0 #1E1B2E; cursor:{{ nextCursor }}; font-size:26px; font-weight:700; color:#1E1B2E; display:flex; align-items:center; justify-content:center;" style-hover="transform:translate(-2px,-2px); box-shadow:5px 5px 0 #1E1B2E;">›</button>
+      </div>
+
+      <div style="display:flex; align-items:center; justify-content:center; gap:8px; padding:0 0 28px;">
+        <sc-for list="{{ readerDots }}" as="d" hint-placeholder-count="5">
+          <span onClick="{{ d.onJump }}" style="width:{{ d.size }}; height:11px; border-radius:999px; background:{{ d.bg }}; border:2px solid #1E1B2E; cursor:pointer; transition:width .2s;"></span>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isCreate }}" hint-placeholder-val="{{ false }}">
+    <div style="min-height:100vh;">
+      <div style="position:sticky; top:0; z-index:10; background:#fff; border-bottom:4px solid #1E1B2E; padding:16px clamp(18px,4vw,40px);">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:18px;">
+          <div style="font-family:'Fredoka',sans-serif; font-weight:700; font-size:clamp(18px,2.4vw,24px);">{{ wizardHeading }}</div>
+          <button onClick="{{ onCancelCreate }}" style="font-family:'Poppins',sans-serif; font-weight:700; font-size:13px; background:#fff; border:2px solid #1E1B2E; padding:8px 16px; border-radius:10px; box-shadow:2px 2px 0 #1E1B2E; cursor:pointer;" style-hover="background:#FF4D6D; color:#fff;">✕ Cancel</button>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+          <sc-for list="{{ steps }}" as="s" hint-placeholder-count="5">
+            <div onClick="{{ s.onJump }}" style="display:flex; align-items:center; gap:9px; cursor:{{ s.cursor }};">
+              <span style="width:30px; height:30px; flex:0 0 auto; border-radius:50%; border:3px solid #1E1B2E; display:flex; align-items:center; justify-content:center; font-family:'Fredoka',sans-serif; font-weight:600; font-size:14px; background:{{ s.bg }}; color:{{ s.color }};">{{ s.mark }}</span>
+              <span style="font-family:'Poppins',sans-serif; font-weight:700; font-size:13px; color:{{ s.labelColor }};">{{ s.label }}</span>
+              <span style="width:clamp(10px,2vw,34px); height:3px; background:{{ s.lineBg }}; border-radius:2px; margin:0 2px;">&nbsp;</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="background:#FFFDF7;">
+        <div style="max-width:1080px; margin:0 auto; padding:clamp(24px,3.5vw,44px) clamp(18px,4vw,40px) 40px;">
+
+          <sc-if value="{{ atStep1 }}" hint-placeholder-val="{{ true }}">
+            <div>
+              <h2 style="font-family:'Fredoka',sans-serif; font-weight:700; font-size:clamp(24px,3.2vw,34px); margin:0 0 6px;">What should this story teach?</h2>
+              <p style="font-weight:500; color:#6b6680; margin:0 0 26px; font-size:15px;">Pick one human value. Hover any card to see what it means.</p>
+              <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:14px;">
+                <sc-for list="{{ valuesList }}" as="v" hint-placeholder-count="9">
+                  <div onClick="{{ v.onSelect }}" onMouseEnter="{{ v.onHover }}" style="position:relative; cursor:pointer; border:3px solid #1E1B2E; border-radius:16px; background:{{ v.bg }}; color:{{ v.fg }}; padding:18px 16px; min-height:92px; display:flex; flex-direction:column; justify-content:center; box-shadow:{{ v.shadow }}; transition:transform .12s;" style-hover="transform:translate(-2px,-2px);">
+                    <span style="font-family:'Fredoka',sans-serif; font-weight:600; font-size:18px;">{{ v.name }}</span>
+                    <span style="font-family:'Poppins',sans-serif; font-weight:600; font-size:12px; opacity:.85; margin-top:4px;">{{ v.short }}</span>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="margin-top:24px; background:#1E1B2E; color:#fff; border-radius:16px; padding:20px 24px; display:flex; align-items:center; gap:16px; min-height:78px;">
+                <div style="width:46px; height:46px; flex:0 0 auto; border-radius:12px; background:{{ hoverColor }}; border:3px solid #fff;">&nbsp;</div>
+                <div>
+                  <div style="font-family:'Fredoka',sans-serif; font-weight:600; font-size:20px;">{{ hoverName }}</div>
+                  <div style="font-family:'Poppins',sans-serif; font-weight:500; font-size:14px; color:#cfcbe0; line-height:1.4;">{{ hoverDesc }}</div>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ atStep2 }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <h2 style="font-family:'Fredoka',sans-serif; font-weight:700; font-size:clamp(24px,3.2vw,34px); margin:0 0 6px;">Choose a story</h2>
+              <p style="font-weight:500; color:#6b6680; margin:0 0 26px; font-size:15px;">Three tales about <strong>{{ valueNameLc }}</strong>. Tap a title to read it, then pick your favorite.</p>
+              <div style="display:flex; flex-direction:column; gap:16px;">
+                <sc-for list="{{ storiesList }}" as="st" hint-placeholder-count="3">
+                  <div style="border:3px solid #1E1B2E; border-radius:18px; overflow:hidden; background:#fff; box-shadow:{{ st.shadow }};">
+                    <div onClick="{{ st.onToggle }}" style="display:flex; align-items:center; gap:14px; padding:18px 20px; cursor:pointer; background:{{ st.headBg }};">
+                      <span style="width:40px; height:40px; flex:0 0 auto; border-radius:50%; background:{{ st.dot }}; border:3px solid #1E1B2E; display:flex; align-items:center; justify-content:center; font-size:20px;">{{ st.emoji }}</span>
+                      <div style="flex:1; min-width:0;">
+                        <div style="font-family:'Fredoka',sans-serif; font-weight:600; font-size:clamp(17px,2.2vw,21px);">{{ st.title }}</div>
+                        <div style="font-family:'Poppins',sans-serif; font-weight:500; font-size:13px; color:#6b6680;">{{ st.blurb }}</div>
+                      </div>
+                      <span style="flex:0 0 auto; font-family:'Fredoka',sans-serif; font-weight:600; font-size:13px; color:#8a85a0;">{{ st.toggleLabel }}</span>
+                    </div>
+                    <sc-if value="{{ st.expanded }}" hint-placeholder-val="{{ false }}">
+                      <div style="padding:6px 22px 22px; border-top:2px dashed #e3e0ee;">
+                        <p style="font-family:'Poppins',sans-serif; font-weight:500; font-size:15px; line-height:1.6; color:#3a3550; white-space:pre-line; margin:14px 0 18px;">{{ st.full }}</p>
+                        <button onClick="{{ st.onChoose }}" style="font-family:'Fredoka',sans-serif; font-weight:600; font-size:15px; color:{{ st.chooseFg }}; background:{{ st.chooseBg }}; border:3px solid #1E1B2E; padding:11px 22px; border-radius:12px; box-shadow:3px 3px 0 #1E1B2E; cursor:pointer;" style-hover="transform:translate(-2px,-2px); box-shadow:5px 5px 0 #1E1B2E;">{{ st.chooseLabel }}</button>
+                      </div>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ atStep3 }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <h2 style="font-family:'Fredoka',sans-serif; font-weight:700; font-size:clamp(24px,3.2vw,34px); margin:0 0 6px;">Build the pages</h2>
+              <p style="font-weight:500; color:#6b6680; margin:0 0 22px; font-size:15px;">Each page has a picture and a line for the narrator. Add, edit, or remove as you like.</p>
+              <div style="margin-bottom:22px;">
+                <label style="display:block; font-family:'Fredoka',sans-serif; font-weight:600; font-size:14px; margin-bottom:8px;">Story title</label>
+                <input value="{{ draftTitle }}" onChange="{{ onTitle }}" placeholder="Give your story a title" style="width:100%; max-width:520px; padding:13px 16px; border:3px solid #1E1B2E; border-radius:12px; font-size:17px; font-weight:600; outline:none; background:#fff;">
+              </div>
+              <div style="display:flex; flex-direction:column; gap:16px;">
+                <sc-for list="{{ sectionsList }}" as="sec" hint-placeholder-count="3">
+                  <div style="border:3px solid #1E1B2E; border-radius:16px; background:#fff; box-shadow:3px 3px 0 #1E1B2E; overflow:hidden;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 18px; background:#FFF1C2; border-bottom:3px solid #1E1B2E;">
+                      <span style="font-family:'Fredoka',sans-serif; font-weight:600; font-size:16px; display:flex; align-items:center; gap:10px;"><span style="width:28px; height:28px; border-radius:50%; background:#1E1B2E; color:#FFD23F; display:flex; align-items:center; justify-content:center; font-size:13px;">{{ sec.num }}</span>Page {{ sec.num }}</span>
+                      <button onClick="{{ sec.onRemove }}" style="font-family:'Poppins',sans-serif; font-weight:700; font-size:12px; background:#fff; border:2px solid #1E1B2E; padding:6px 12px; border-radius:9px; cursor:pointer;" style-hover="background:#FF4D6D; color:#fff;">Remove</button>
+                    </div>
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px,1fr)); gap:16px; padding:18px;">
+                      <div>
+                        <label style="display:block; font-family:'Poppins',sans-serif; font-weight:700; font-size:12px; color:#6b6680; margin-bottom:6px; text-transform:uppercase; letter-spacing:.05em;">🖼 Picture</label>
+                        <textarea value="{{ sec.imageDesc }}" onChange="{{ sec.onImg }}" placeholder="Describe the illustration for this page…" style="width:100%; min-height:88px; resize:vertical; padding:12px 14px; border:2px solid #d9d5e8; border-radius:10px; font-size:14px; font-weight:500; line-height:1.5; outline:none; background:#FBFAFF;"></textarea>
+                      </div>
+                      <div>
+                        <label style="display:block; font-family:'Poppins',sans-serif; font-weight:700; font-size:12px; color:#6b6680; margin-bottom:6px; text-transform:uppercase; letter-spacing:.05em;">🗣 Narrator text</label>
+                        <textarea value="{{ sec.text }}" onChange="{{ sec.onText }}" placeholder="What the narrator reads aloud on this page…" style="width:100%; min-height:88px; resize:vertical; padding:12px 14px; border:2px solid #d9d5e8; border-radius:10px; font-size:14px; font-weight:500; line-height:1.5; outline:none; background:#FBFAFF;"></textarea>
+                      </div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+              <button onClick="{{ onAddSection }}" style="margin-top:18px; font-family:'Fredoka',sans-serif; font-weight:600; font-size:15px; color:#1E1B2E; background:#2BC48A; border:3px dashed #1E1B2E; padding:13px 22px; border-radius:14px; cursor:pointer; width:100%;" style-hover="background:#27b27e;">+ Add a page</button>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ atStep4 }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <h2 style="font-family:'Fredoka',sans-serif; font-weight:700; font-size:clamp(24px,3.2vw,34px); margin:0 0 6px;">Pick an art style</h2>
+              <p style="font-weight:500; color:#6b6680; margin:0 0 26px; font-size:15px;">Here is page 1 in three styles. Choose the look for your whole book.</p>
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(250px,1fr)); gap:22px;">
+                <sc-for list="{{ styleList }}" as="sty" hint-placeholder-count="3">
+                  <div onClick="{{ sty.onSelect }}" style="cursor:pointer; border:4px solid {{ sty.ring }}; border-radius:22px; padding:12px; background:{{ sty.panelBg }}; transition:transform .12s;" style-hover="transform:translateY(-4px);">
+                    <div style="height:300px;">
+                      <dc-import name="StoryPage" kind="page" image-desc="{{ sty.imageDesc }}" text="{{ sty.text }}" variant="{{ sty.id }}" page-num="1" page-total="1" accent="{{ draftAccent }}" style="width:100%; height:100%" hint-size="100%,300px"></dc-import>
+                    </div>
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:14px 6px 4px;">
+                      <div>
+                        <div style="font-family:'Fredoka',sans-serif; font-weight:600; font-size:18px;">{{ sty.name }}</div>
+                        <div style="font-family:'Poppins',sans-serif; font-weight:500; font-size:12px; color:#6b6680;">{{ sty.desc }}</div>
+                      </div>
+                      <span style="flex:0 0 auto; width:28px; height:28px; border-radius:50%; border:3px solid #1E1B2E; background:{{ sty.checkBg }}; color:#fff; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700;">{{ sty.check }}</span>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ atStep5 }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <h2 style="font-family:'Fredoka',sans-serif; font-weight:700; font-size:clamp(24px,3.2vw,34px); margin:0 0 6px;">Review your book</h2>
+              <p style="font-weight:500; color:#6b6680; margin:0 0 26px; font-size:15px;">Every page in <strong>{{ styleLabel }}</strong> style. Happy with it?</p>
+              <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(230px,1fr)); gap:22px; margin-bottom:32px;">
+                <div style="height:320px;">
+                  <dc-import name="StoryPage" kind="cover" title="{{ draftTitle }}" value="{{ valueName }}" accent="{{ draftAccent }}" variant="{{ draftStyleId }}" style="width:100%; height:100%" hint-size="100%,320px"></dc-import>
+                </div>
+                <sc-for list="{{ reviewList }}" as="rv" hint-placeholder-count="3">
+                  <div style="height:320px;">
+                    <dc-import name="StoryPage" kind="page" image-desc="{{ rv.imageDesc }}" text="{{ rv.text }}" variant="{{ draftStyleId }}" page-num="{{ rv.num }}" page-total="{{ reviewTotal }}" accent="{{ draftAccent }}" style="width:100%; height:100%" hint-size="100%,320px"></dc-import>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:center; background:#fff; border:3px solid #1E1B2E; border-radius:18px; padding:20px 24px; box-shadow:4px 4px 0 #1E1B2E;">
+                <div style="flex:1 1 200px;">
+                  <div style="font-family:'Fredoka',sans-serif; font-weight:600; font-size:18px;">Ready to add it to your library?</div>
+                  <div style="font-family:'Poppins',sans-serif; font-weight:500; font-size:13px; color:#6b6680;">{{ reviewSummary }}</div>
+                </div>
+                <button onClick="{{ onDecline }}" style="font-family:'Fredoka',sans-serif; font-weight:600; font-size:15px; background:#fff; border:3px solid #1E1B2E; padding:12px 22px; border-radius:13px; box-shadow:3px 3px 0 #1E1B2E; cursor:pointer;" style-hover="background:#FFE7A0;">↩ Make changes</button>
+                <button onClick="{{ onAccept }}" style="font-family:'Fredoka',sans-serif; font-weight:600; font-size:16px; color:#fff; background:#2BC48A; border:3px solid #1E1B2E; padding:13px 26px; border-radius:13px; box-shadow:3px 3px 0 #1E1B2E; cursor:pointer;" style-hover="transform:translate(-2px,-2px); box-shadow:5px 5px 0 #1E1B2E;">{{ acceptLabel }}</button>
+              </div>
+            </div>
+          </sc-if>
+
+        </div>
+      </div>
+
+      <sc-if value="{{ showFooterNav }}" hint-placeholder-val="{{ true }}">
+        <div style="position:sticky; bottom:0; z-index:10; background:#fff; border-top:4px solid #1E1B2E; padding:14px clamp(18px,4vw,40px); display:flex; align-items:center; justify-content:space-between; gap:16px;">
+          <button onClick="{{ onPrevStep }}" disabled="{{ atStep1 }}" style="font-family:'Fredoka',sans-serif; font-weight:600; font-size:15px; background:#fff; border:3px solid #1E1B2E; padding:12px 24px; border-radius:13px; box-shadow:3px 3px 0 #1E1B2E; cursor:{{ prevStepCursor }}; opacity:{{ prevStepOpacity }};" style-hover="transform:translate(-2px,-2px); box-shadow:5px 5px 0 #1E1B2E;">← Back</button>
+          <div style="font-family:'Poppins',sans-serif; font-weight:700; font-size:13px; color:#8a85a0;">{{ stepCounter }}</div>
+          <button onClick="{{ onNextStep }}" disabled="{{ nextDisabled }}" style="font-family:'Fredoka',sans-serif; font-weight:600; font-size:16px; color:#fff; background:{{ nextBg }}; border:3px solid #1E1B2E; padding:12px 28px; border-radius:13px; box-shadow:4px 4px 0 #1E1B2E; cursor:{{ nextStepCursor }};" style-hover="transform:translate(-2px,-2px); box-shadow:6px 6px 0 #1E1B2E;">{{ nextLabel }}</button>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;startView&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;login&quot;,&quot;library&quot;],&quot;default&quot;:&quot;login&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;demoSeed&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  state = {
+    view: 'login',
+    loginEmail: '',
+    loginPass: '',
+    userName: 'Maya',
+    books: [],
+    currentBookId: null,
+    readerPage: 0,
+    step: 1,
+    draft: null,
+    editingId: null,
+    expandedStoryId: null,
+    hoverValueId: null,
+    loaded: false,
+  };
+
+  STORAGE_KEY = 'storyseed.books.v1';
+
+  VALUES = [
+    { id:'courage',        name:'Courage',        color:'#2E6BFF', short:'being brave',   desc:'Someone who tries even when they feel scared or unsure.' },
+    { id:'kindness',       name:'Kindness',       color:'#FF4D6D', short:'caring',        desc:'Someone who cares about how others feel and helps them.' },
+    { id:'honesty',        name:'Honesty',        color:'#2BC48A', short:'truthful',      desc:'Someone who tells the truth, even when it is hard.' },
+    { id:'patience',       name:'Patience',       color:'#9B6BFF', short:'calm waiting',  desc:'Someone who can wait calmly without getting upset.' },
+    { id:'generosity',     name:'Generosity',     color:'#FF8A3D', short:'sharing',       desc:'Someone who loves to share what they have with others.' },
+    { id:'perseverance',   name:'Perseverance',   color:'#00BBD1', short:'never giving up',desc:'Someone who keeps trying and does not give up easily.' },
+    { id:'responsibility', name:'Responsibility', color:'#C879FF', short:'follows through',desc:'Someone who takes ownership and follows through on what they promise.' },
+    { id:'empathy',        name:'Empathy',        color:'#FF6FB5', short:'understanding', desc:'Someone who understands and shares the feelings of others.' },
+    { id:'gratitude',      name:'Gratitude',      color:'#7BC043', short:'thankful',      desc:'Someone who notices good things and remembers to say thank you.' },
+  ];
+
+  STYLES = [
+    { id:'crayon',     name:'Crayon Doodle', desc:'warm, hand-drawn, sunny' },
+    { id:'cutout',     name:'Paper Cut-out', desc:'bold flat shapes, playful' },
+    { id:'watercolor', name:'Soft Watercolor', desc:'dreamy washes of color' },
+  ];
+
+  componentDidMount() {
+    let books = [];
+    try {
+      const raw = localStorage.getItem(this.STORAGE_KEY);
+      if (raw) books = JSON.parse(raw);
+    } catch (e) {}
+    if ((!Array.isArray(books) || books.length === 0) && this.props.demoSeed !== false) {
+      books = this.seedBooks();
+      this.persist(books);
+    }
+    if (!Array.isArray(books)) books = [];
+    const sv = this.props.startView === 'library' ? 'library' : 'login';
+    this.setState({ books, loaded: true, view: sv });
+  }
+
+  seedBooks() {
+    const mk = (valueId, storyIdx, styleId) => {
+      const v = this.VALUES.find(x => x.id === valueId);
+      const stories = this.buildStories(v.name);
+      const st = stories[storyIdx];
+      return { id: 'seed-' + valueId + '-' + storyIdx, valueId, value: v.name, accent: v.color,
+        title: st.title, storyId: st.id, styleId, sections: st.sections.map(s => ({ ...s })) };
+    };
+    return [ mk('courage', 0, 'crayon'), mk('kindness', 1, 'cutout'), mk('perseverance', 2, 'watercolor') ];
+  }
+
+  persist(books) {
+    try { localStorage.setItem(this.STORAGE_KEY, JSON.stringify(books)); } catch (e) {}
+  }
+
+  buildStories(valueName) {
+    const vl = (valueName || 'kindness').toLowerCase();
+    return [
+      {
+        id: 'forest', title: 'Pip and the Whispering Forest', emoji: '🦊', dot: '#FF8A3D',
+        blurb: 'A shy little fox discovers his ' + vl + ' deep in the woods.',
+        full: 'Pip the fox loved his cozy corner of the forest, but the dark paths beyond the old oak always made his tail tremble.\n\nWhen a tiny bird gets lost in the shadows, Pip must decide whether to stay safe at home or step into the unknown to help.\n\nWith every careful step, Pip learns that ' + vl + ' does not mean you are never afraid \u2014 it means you try anyway.',
+        sections: [
+          { imageDesc: 'A small orange fox peeking out from behind a giant oak tree at the edge of a sunny forest', text: 'Pip the fox loved his cozy corner of the forest. But the tall, dark trees beyond the old oak always made his tail tremble.' },
+          { imageDesc: 'A tiny lost bird shivering alone on a branch deep in the shadowy woods', text: 'One morning, Pip heard a tiny cry. A little bird was lost, all alone, where the shadows grew long and deep.' },
+          { imageDesc: 'The fox takes a careful first step onto the dark forest path, ears held back', text: 'Pip\u2019s heart went thump-thump-thump. The path looked so dark and scary. But the bird needed help right now.' },
+          { imageDesc: 'The brave fox walks through the woods with the bird, fireflies lighting the way', text: 'So Pip took one brave step, and then another. With every step, his ' + vl + ' grew a little bigger and brighter.' },
+          { imageDesc: 'The fox and a happy bird family reunited in a glowing treetop home at sunset', text: 'Pip found the bird\u2019s family safe and warm. Being brave didn\u2019t mean he was never scared \u2014 it meant he tried anyway.' },
+        ],
+      },
+      {
+        id: 'meadow', title: 'Bo the Bunny\u2019s Big Day', emoji: '🐰', dot: '#2BC48A',
+        blurb: 'A bouncy bunny learns about ' + vl + ' on the sunniest day in the meadow.',
+        full: 'Bo the bunny was the fastest hopper in the whole sunny meadow, and everyone knew it.\n\nBut on the day of the big Meadow Games, something happens that the fastest hopper cannot solve with speed alone.\n\nBo learns that ' + vl + ' can matter even more than being first.',
+        sections: [
+          { imageDesc: 'A cheerful white bunny stretching at the start line of a race in a bright flowery meadow', text: 'Bo the bunny was the fastest hopper in the whole meadow. Today was the big Meadow Games, and Bo could not wait!' },
+          { imageDesc: 'A small turtle tripping and dropping a basket of berries near the racing path', text: 'Just as the race began, Bo saw little Theo the turtle tumble over, spilling his basket of ripe red berries everywhere.' },
+          { imageDesc: 'The bunny pausing mid-hop, looking back at the struggling turtle while others race ahead', text: 'Bo stopped. The finish line was so close. But Theo looked sad, and nobody else had stopped to help.' },
+          { imageDesc: 'The bunny helping the turtle gather berries together, both smiling warmly', text: 'Bo hopped back and helped gather every last berry. It was slow work, but showing ' + vl + ' felt better than winning.' },
+          { imageDesc: 'The bunny and turtle sharing the berries together under a big sunflower as friends cheer', text: 'They missed the finish line, but they shared the berries together. Bo had won something even better \u2014 a brand new friend.' },
+        ],
+      },
+      {
+        id: 'river', title: 'Tilly Bear and the Rushing River', emoji: '🐻', dot: '#2E6BFF',
+        blurb: 'A gentle bear cub finds her ' + vl + ' beside a wild, rushing river.',
+        full: 'Tilly was the smallest bear cub by the great rushing river, and sometimes the world felt very big.\n\nWhen a storm scatters her family\u2019s winter berries across the riverbank, Tilly faces a problem far bigger than she is.\n\nStep by patient step, Tilly discovers that ' + vl + ' lives inside even the smallest of us.',
+        sections: [
+          { imageDesc: 'A tiny round bear cub standing beside a wide rushing blue river under tall pine trees', text: 'Tilly was the smallest bear cub by the great rushing river. Sometimes, the whole world felt much too big for her.' },
+          { imageDesc: 'A sudden storm scattering bright berries all across a muddy riverbank', text: 'One night a storm came roaring through and scattered her family\u2019s winter berries all across the slippery bank.' },
+          { imageDesc: 'The little bear looking at the huge mess of scattered berries, ears drooping', text: 'In the morning, Tilly saw the mess. It looked impossible. \u201cI\u2019m too small,\u201d she sighed. \u201cI could never fix all this.\u201d' },
+          { imageDesc: 'The bear cub carefully placing berries one by one into a woven basket', text: 'But Tilly began anyway \u2014 one berry, then two, then ten. Her ' + vl + ' carried her on, even when her paws grew tired.' },
+          { imageDesc: 'The whole bear family hugging beside a full basket of berries at golden sunrise', text: 'By sunrise the basket was full. Her family hugged her tight. Tilly learned that big things are done by small, steady steps.' },
+        ],
+      },
+    ];
+  }
+
+  curValue() { const d = this.state.draft; return this.VALUES.find(v => v.id === (d && d.valueId)) || null; }
+  curBook() { return this.state.books.find(b => b.id === this.state.currentBookId) || null; }
+  storiesNow() { const v = this.curValue(); return v ? this.buildStories(v.name) : []; }
+
+  // ---- nav / auth ----
+  onLogin = () => this.setState({ view: 'library' });
+  onLogout = () => this.setState({ view: 'login', loginEmail: '', loginPass: '' });
+  onLoginEmail = (e) => this.setState({ loginEmail: e.target.value });
+  onLoginPass = (e) => this.setState({ loginPass: e.target.value });
+
+  // ---- reader ----
+  openBook = (id) => this.setState({ currentBookId: id, readerPage: 0, view: 'reader' });
+  closeReader = () => this.setState({ view: 'library' });
+  readerPages() {
+    const b = this.curBook(); if (!b) return [];
+    const pages = [{ kind: 'cover' }];
+    (b.sections || []).forEach((s, i) => pages.push({ kind: 'page', imageDesc: s.imageDesc, text: s.text, num: i + 1 }));
+    return pages;
+  }
+  prevPage = () => this.setState(s => ({ readerPage: Math.max(0, s.readerPage - 1) }));
+  nextPage = () => { const t = this.readerPages().length; this.setState(s => ({ readerPage: Math.min(t - 1, s.readerPage + 1) })); };
+  jumpPage = (i) => this.setState({ readerPage: i });
+
+  // ---- wizard ----
+  newDraft() { return { id: 'b' + Date.now(), valueId: null, storyId: null, title: '', accent: '#2E6BFF', sections: [], styleId: null }; }
+  startCreate = () => this.setState({ view: 'create', step: 1, draft: this.newDraft(), editingId: null, expandedStoryId: null, hoverValueId: null });
+  startEdit = (id) => { const b = this.state.books.find(x => x.id === id); if (!b) return;
+    this.setState({ view: 'create', step: 1, editingId: id, expandedStoryId: null, hoverValueId: b.valueId,
+      draft: { id: b.id, valueId: b.valueId, storyId: b.storyId, title: b.title, accent: b.accent, styleId: b.styleId, sections: (b.sections || []).map(s => ({ ...s })) } }); };
+  cancelCreate = () => this.setState({ view: 'library' });
+
+  selectValue = (id) => this.setState(s => {
+    const v = this.VALUES.find(x => x.id === id);
+    const d = { ...s.draft, valueId: id, accent: v.color };
+    if (s.draft.valueId !== id) { d.storyId = null; d.sections = []; d.title = ''; }
+    return { draft: d, hoverValueId: id };
+  });
+  hoverValue = (id) => this.setState({ hoverValueId: id });
+
+  toggleStory = (id) => this.setState(s => ({ expandedStoryId: s.expandedStoryId === id ? null : id }));
+  chooseStory = (id) => this.setState(s => {
+    const st = this.storiesNow().find(x => x.id === id);
+    return { draft: { ...s.draft, storyId: id, title: st.title, sections: st.sections.map(x => ({ ...x })) } };
+  });
+
+  onTitle = (e) => { const v = e.target.value; this.setState(s => ({ draft: { ...s.draft, title: v } })); };
+  addSection = () => this.setState(s => ({ draft: { ...s.draft, sections: [...s.draft.sections, { imageDesc: '', text: '' }] } }));
+  removeSection = (i) => this.setState(s => ({ draft: { ...s.draft, sections: s.draft.sections.filter((_, idx) => idx !== i) } }));
+  updateSection = (i, field, val) => this.setState(s => ({ draft: { ...s.draft, sections: s.draft.sections.map((sec, idx) => idx === i ? { ...sec, [field]: val } : sec) } }));
+  selectStyle = (id) => this.setState(s => ({ draft: { ...s.draft, styleId: id } }));
+
+  goStep = (n) => this.setState({ step: n });
+  nextStep = () => { if (!this.canProceed()) return; this.setState(s => ({ step: Math.min(5, s.step + 1) })); };
+  prevStep = () => this.setState(s => ({ step: Math.max(1, s.step - 1) }));
+
+  canProceed() {
+    const d = this.state.draft; if (!d) return false;
+    switch (this.state.step) {
+      case 1: return !!d.valueId;
+      case 2: return !!d.storyId;
+      case 3: return d.sections.length >= 1 && d.sections.every(s => (s.text || '').trim().length > 0);
+      case 4: return !!d.styleId;
+      default: return true;
+    }
+  }
+
+  acceptBook = () => {
+    const v = this.curValue();
+    const d = this.state.draft;
+    const book = { id: d.id, valueId: d.valueId, value: v ? v.name : '', accent: d.accent,
+      title: (d.title || '').trim() || 'Untitled Story', storyId: d.storyId, styleId: d.styleId,
+      sections: d.sections.map(s => ({ ...s })) };
+    this.setState(s => {
+      const exists = s.books.some(b => b.id === book.id);
+      const books = exists ? s.books.map(b => b.id === book.id ? book : b) : [...s.books, book];
+      this.persist(books);
+      return { books, view: 'library', currentBookId: book.id };
+    });
+  };
+  declineReview = () => this.setState({ step: 3 });
+  deleteBook = (id) => {
+    const b = this.state.books.find(x => x.id === id);
+    if (!window.confirm('Delete "' + (b ? b.title : 'this book') + '"? This cannot be undone.')) return;
+    this.setState(s => { const books = s.books.filter(x => x.id !== id); this.persist(books); return { books }; });
+  };
+
+  renderVals() {
+    const s = this.state;
+    const view = s.view;
+    const v = this.curValue();
+    const out = {
+      isLogin: view === 'login',
+      isLibrary: view === 'library',
+      isReader: view === 'reader',
+      isCreate: view === 'create',
+      loginEmail: s.loginEmail,
+      loginPass: s.loginPass,
+      onLogin: this.onLogin, onLogout: this.onLogout, onLoginEmail: this.onLoginEmail, onLoginPass: this.onLoginPass,
+      userName: s.userName,
+      userInitial: (s.userName || 'M').charAt(0).toUpperCase(),
+      onNewStory: this.startCreate,
+    };
+
+    // library
+    const styleName = (id) => { const st = this.STYLES.find(x => x.id === id); return st ? st.name : 'Crayon Doodle'; };
+    out.books = s.books.map(b => ({
+      id: b.id, title: b.title, value: b.value, accent: b.accent, styleId: b.styleId || 'crayon',
+      pageCountLabel: ((b.sections || []).length) + ' pages',
+      styleLabel: styleName(b.styleId),
+      onOpen: () => this.openBook(b.id),
+      onEdit: (e) => { if (e && e.stopPropagation) e.stopPropagation(); this.startEdit(b.id); },
+      onDelete: (e) => { if (e && e.stopPropagation) e.stopPropagation(); this.deleteBook(b.id); },
+    }));
+
+    // reader
+    const pages = this.readerPages();
+    const b = this.curBook();
+    const idx = Math.min(s.readerPage, Math.max(0, pages.length - 1));
+    const rp = pages[idx] || { kind: 'cover' };
+    out.readerTitle = b ? b.title : '';
+    out.readerValue = b ? b.value : '';
+    out.readerAccent = b ? b.accent : '#2E6BFF';
+    out.readerStyleId = b ? (b.styleId || 'crayon') : 'crayon';
+    out.readerTotal = pages.length;
+    out.rpKind = rp.kind;
+    out.rpImageDesc = rp.imageDesc || '';
+    out.rpText = rp.text || '';
+    out.rpNum = rp.num || 0;
+    out.readerPageLabel = idx === 0 ? 'Cover' : ('Page ' + idx + ' / ' + (pages.length - 1));
+    out.atFirstPage = idx <= 0;
+    out.atLastPage = idx >= pages.length - 1;
+    out.prevBtnBg = idx <= 0 ? '#eee7d2' : '#fff';
+    out.nextBtnBg = idx >= pages.length - 1 ? '#eee7d2' : '#FFD23F';
+    out.prevCursor = idx <= 0 ? 'default' : 'pointer';
+    out.nextCursor = idx >= pages.length - 1 ? 'default' : 'pointer';
+    out.onPrevPage = this.prevPage; out.onNextPage = this.nextPage; out.onCloseReader = this.closeReader;
+    out.readerDots = pages.map((p, i) => ({
+      bg: i === idx ? '#FF4D6D' : '#fff', size: i === idx ? '26px' : '11px',
+      onJump: () => this.jumpPage(i),
+    }));
+
+    // wizard
+    const d = s.draft || this.newDraft();
+    const step = s.step;
+    out.draftTitle = d.title || '';
+    out.draftAccent = d.accent || '#2E6BFF';
+    out.draftStyleId = d.styleId || 'crayon';
+    out.valueName = v ? v.name : '';
+    out.valueNameLc = v ? v.name.toLowerCase() : 'this value';
+    out.styleLabel = styleName(d.styleId);
+    out.wizardHeading = s.editingId ? 'Edit story' : 'Create a new story';
+    out.atStep1 = step === 1; out.atStep2 = step === 2; out.atStep3 = step === 3; out.atStep4 = step === 4; out.atStep5 = step === 5;
+    out.onCancelCreate = this.cancelCreate;
+
+    const stepDefs = [
+      { n: 1, label: 'Value' }, { n: 2, label: 'Story' }, { n: 3, label: 'Pages' }, { n: 4, label: 'Style' }, { n: 5, label: 'Review' },
+    ];
+    out.steps = stepDefs.map((sd, i) => {
+      const done = sd.n < step; const active = sd.n === step;
+      return {
+        label: sd.label, mark: done ? '✓' : String(sd.n),
+        bg: active ? '#FF4D6D' : (done ? '#2BC48A' : '#fff'),
+        color: (active || done) ? '#fff' : '#1E1B2E',
+        labelColor: active ? '#1E1B2E' : '#8a85a0',
+        lineBg: i === stepDefs.length - 1 ? 'transparent' : (done ? '#2BC48A' : '#e3e0ee'),
+        cursor: sd.n <= step ? 'pointer' : 'default',
+        onJump: () => { if (sd.n <= step) this.goStep(sd.n); },
+      };
+    });
+
+    // step 1 values
+    const hoverId = s.hoverValueId || d.valueId;
+    const hv = this.VALUES.find(x => x.id === hoverId);
+    out.valuesList = this.VALUES.map(val => {
+      const sel = d.valueId === val.id;
+      return { name: val.name, short: val.short,
+        bg: sel ? val.color : '#fff',
+        fg: sel ? '#fff' : '#1E1B2E',
+        shadow: sel ? ('4px 4px 0 #1E1B2E') : '3px 3px 0 #1E1B2E',
+        onSelect: () => this.selectValue(val.id),
+        onHover: () => this.hoverValue(val.id),
+      };
+    });
+    out.hoverName = hv ? hv.name : 'Pick a value';
+    out.hoverDesc = hv ? hv.desc : 'Hover over any value to learn what it teaches little readers.';
+    out.hoverColor = hv ? hv.color : '#8a85a0';
+
+    // step 2 stories
+    const stories = this.storiesNow();
+    out.storiesList = stories.map(st => {
+      const expanded = s.expandedStoryId === st.id; const chosen = d.storyId === st.id;
+      return { title: st.title, blurb: st.blurb, full: st.full, emoji: st.emoji, dot: st.dot,
+        expanded, headBg: chosen ? '#FFF1C2' : '#fff',
+        shadow: chosen ? '5px 5px 0 #FF4D6D' : '3px 3px 0 #1E1B2E',
+        toggleLabel: expanded ? 'Hide ▲' : 'Read ▼',
+        chooseLabel: chosen ? '✓ Chosen' : 'Choose this story',
+        chooseBg: chosen ? '#2BC48A' : '#FFD23F', chooseFg: chosen ? '#fff' : '#1E1B2E',
+        onToggle: () => this.toggleStory(st.id),
+        onChoose: () => this.chooseStory(st.id),
+      };
+    });
+
+    // step 3 sections
+    out.sectionsList = (d.sections || []).map((sec, i) => ({
+      num: i + 1, imageDesc: sec.imageDesc || '', text: sec.text || '',
+      onImg: (e) => this.updateSection(i, 'imageDesc', e.target.value),
+      onText: (e) => this.updateSection(i, 'text', e.target.value),
+      onRemove: () => this.removeSection(i),
+    }));
+    out.onTitle = this.onTitle; out.onAddSection = this.addSection;
+
+    // step 4 styles
+    const sample = (d.sections && d.sections[0]) ? d.sections[0] : { imageDesc: 'the opening scene of your story', text: 'Once upon a time, a little story was just beginning…' };
+    out.styleList = this.STYLES.map(st => {
+      const sel = d.styleId === st.id;
+      return { id: st.id, name: st.name, desc: st.desc, imageDesc: sample.imageDesc, text: sample.text,
+        ring: sel ? '#FF4D6D' : 'transparent', panelBg: sel ? '#FFE7EC' : 'transparent',
+        check: sel ? '✓' : '', checkBg: sel ? '#2BC48A' : '#fff',
+        onSelect: () => this.selectStyle(st.id),
+      };
+    });
+
+    // step 5 review
+    out.reviewList = (d.sections || []).map((sec, i) => ({ imageDesc: sec.imageDesc || '', text: sec.text || '', num: i + 1 }));
+    out.reviewTotal = (d.sections || []).length;
+    out.reviewSummary = (d.sections || []).length + ' pages · teaches ' + (v ? v.name.toLowerCase() : 'a value') + ' · ' + styleName(d.styleId) + ' style';
+    out.acceptLabel = s.editingId ? '✓ Save changes' : '✓ Add to library';
+    out.onAccept = this.acceptBook; out.onDecline = this.declineReview;
+
+    // footer nav
+    out.showFooterNav = step >= 1 && step <= 4;
+    out.onPrevStep = this.prevStep; out.onNextStep = this.nextStep;
+    out.prevStepCursor = step === 1 ? 'default' : 'pointer';
+    out.prevStepOpacity = step === 1 ? '.4' : '1';
+    out.stepCounter = 'Step ' + step + ' of 5';
+    const canGo = this.canProceed();
+    out.nextDisabled = !canGo;
+    out.nextBg = canGo ? '#FF4D6D' : '#d9d5e8';
+    out.nextStepCursor = canGo ? 'pointer' : 'not-allowed';
+    out.nextLabel = step === 4 ? 'Review →' : 'Next →';
+
+    return out;
+  }
+}
+</script>
+</body>
+</html>

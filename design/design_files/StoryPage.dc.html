@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</helmet>
+<div style="display:flex; flex-direction:column; height:100%; width:100%; border:3px solid #1E1B2E; border-radius:20px; overflow:hidden; background:#fff; box-shadow:5px 5px 0 #1E1B2E; font-family:'Poppins',sans-serif;">
+  <div style="position:relative; flex:1 1 auto; min-height:0; display:flex; align-items:center; justify-content:center; padding:24px; background:{{ illoBg }};">
+    <sc-if value="{{ showShapes }}" hint-placeholder-val="{{ false }}">
+      <span style="position:absolute; left:13%; top:16%; width:34%; aspect-ratio:1; border-radius:50%; background:{{ shapeA }}; border:3px solid #1E1B2E;"></span>
+      <span style="position:absolute; right:11%; bottom:18%; width:30%; height:34%; border-radius:16px; background:{{ shapeB }}; border:3px solid #1E1B2E; transform:rotate(-6deg);"></span>
+    </sc-if>
+    <sc-if value="{{ isCover }}" hint-placeholder-val="{{ true }}">
+      <div style="position:relative; z-index:2; text-align:center; padding:14px;">
+        <div style="display:inline-block; background:#fff; border:3px solid #1E1B2E; border-radius:999px; padding:5px 18px; font-family:'Poppins',sans-serif; font-weight:700; font-size:clamp(11px,1.4vw,15px); color:#1E1B2E; margin-bottom:16px; box-shadow:3px 3px 0 #1E1B2E;">{{ value }}</div>
+        <h2 style="font-family:'Fredoka',sans-serif; font-weight:700; font-size:clamp(24px,3.6vw,50px); line-height:1.02; color:#1E1B2E; margin:0; text-shadow:2px 2px 0 rgba(255,255,255,.45);">{{ title }}</h2>
+      </div>
+    </sc-if>
+    <sc-if value="{{ isPage }}" hint-placeholder-val="{{ true }}">
+      <span style="position:absolute; left:14px; bottom:11px; right:14px; font-family:'Courier New',monospace; font-size:clamp(9px,1.1vw,12px); color:rgba(30,27,46,.5); line-height:1.3;">{{ caption }}</span>
+    </sc-if>
+  </div>
+  <sc-if value="{{ isPage }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:0 0 auto; background:{{ bandBg }}; border-top:3px solid #1E1B2E; padding:clamp(15px,2.3vw,26px); display:flex; align-items:center; gap:16px;">
+      <p style="flex:1; margin:0; font-family:'Poppins',sans-serif; font-weight:500; font-size:clamp(14px,1.8vw,21px); line-height:1.5; color:#2a2740;">{{ text }}</p>
+      <span style="flex:0 0 auto; font-family:'Fredoka',sans-serif; font-weight:600; font-size:clamp(11px,1.3vw,14px); color:#9a95ad;">{{ pageLabel }}</span>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:340,&quot;height&quot;:440},&quot;kind&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;cover&quot;,&quot;page&quot;],&quot;default&quot;:&quot;cover&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;title&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Pip Finds His Voice&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;value&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Courage&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#2E6BFF&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;imageDesc&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;A small fox peeking out from behind a big oak tree&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;text&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Pip the fox loved his cozy corner of the forest.&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;variant&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;crayon&quot;,&quot;cutout&quot;,&quot;watercolor&quot;],&quot;default&quot;:&quot;crayon&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;pageNum&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:1,&quot;tsType&quot;:&quot;number&quot;},&quot;pageTotal&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:5,&quot;tsType&quot;:&quot;number&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const p = this.props;
+    const styleId = p.variant || 'crayon';
+    const isCover = p.kind === 'cover';
+    const palettes = {
+      crayon:     { base:'#FFE7A0', a:'#FF8A3D', b:'#2E6BFF', band:'#FFFDF5' },
+      cutout:     { base:'#2BC48A', a:'#FFD23F', b:'#FF4D6D', band:'#FFFFFF' },
+      watercolor: { base:'#CBD8FF', a:'#F7B0CC', b:'#B8E6D2', band:'#FBFAFF' },
+    };
+    const pal = palettes[styleId] || palettes.crayon;
+    let illoBg;
+    if (isCover) {
+      illoBg = p.accent || pal.base;
+    } else if (styleId === 'crayon') {
+      illoBg = `repeating-linear-gradient(48deg, rgba(0,0,0,.05) 0 14px, transparent 14px 28px), ${pal.base}`;
+    } else if (styleId === 'watercolor') {
+      illoBg = `radial-gradient(circle at 26% 30%, ${pal.a} 0%, transparent 46%), radial-gradient(circle at 76% 72%, ${pal.b} 0%, transparent 46%), ${pal.base}`;
+    } else {
+      illoBg = pal.base;
+    }
+    const desc = p.imageDesc && String(p.imageDesc).trim() ? p.imageDesc : 'illustration goes here';
+    const num = Number(p.pageNum) || 0;
+    return {
+      isCover,
+      isPage: !isCover,
+      illoBg,
+      shapeA: pal.a,
+      shapeB: pal.b,
+      bandBg: pal.band,
+      showShapes: styleId === 'cutout' && !isCover,
+      caption: '✎  ' + desc,
+      title: p.title || 'Untitled Story',
+      value: p.value || '',
+      text: p.text || '',
+      pageLabel: isCover ? '' : ('Page ' + num),
+      accent: p.accent || '#2E6BFF',
+    };
+  }
+}
+</script>
+</body>
+</html>
