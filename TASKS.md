@@ -398,4 +398,184 @@ underneath once it succeeds — see `LOOP.md`'s "Artifacts & lifecycle".
 
   </details>
 
-- [ ] Add minimal real authentication to the Django backend: session-based login/logout endpoints (`/api/auth/login/`, `/api/auth/logout/`) backed by Django's built-in auth with a single seeded dev user (no self-serve signup flow) — backend-only; the Next.js login page keeps its current simulated flow until a separate task wires it up.
+- [x] Add minimal real authentication to the Django backend: session-based login/logout endpoints (`/api/auth/login/`, `/api/auth/logout/`) backed by Django's built-in auth with a single seeded dev user (no self-serve signup flow) — backend-only; the Next.js login page keeps its current simulated flow until a separate task wires it up.
+
+  <details><summary>plan</summary>
+
+  # Plan — Session-based auth (`/api/auth/login/`, `/api/auth/logout/`)
+  
+  ## Goal
+  Add minimal, real authentication to the Django backend: session-based
+  login/logout backed by Django's built-in `auth` app, with a single seeded dev
+  user (no self-serve signup). **Backend-only** — `app/login/page.tsx` keeps its
+  current simulated flow (per `PROJECT.md`: "any input proceeds") until a
+  separate task wires the frontend to these endpoints. No changes to `app/`,
+  `components/`, or `lib/`.
+  
+  ## Where this lives: extend `core`, no new app
+  `core` is already the infra-only app (health check, no models). Auth here
+  needs no new persisted model — it uses Django's built-in `User` — so it fits
+  `core` rather than justifying a new `accounts` app for two views and one seed
+  migration. `books` got its own app because it owns real domain models
+  (`Book`/`Section`/`Value`/`Style`); this doesn't.
+  
+  ```
+  backend/core/
+    serializers.py     # new: LoginSerializer
+    views.py           # append: login_view, logout_view
+    urls.py            # append: auth/login/, auth/logout/
+    migrations/         # new (core has none yet)
+      __init__.py
+      0001_seed_dev_user.py   # RunPython: creates the single dev user
+    tests.py           # append: LoginTests, LogoutTests
+  ```
+  
+  ## Seeded dev user (`core/migrations/0001_seed_dev_user.py`)
+  Mirrors the `books` app's `0002_seed_reference_data.py` pattern (data
+  migration, not a management command, so `migrate` alone seeds a fresh DB —
+  consistent with how `Value`/`Style` are seeded).
+  
+  - Depends on `("auth", "0012_alter_user_first_name_max_length")` (current
+    latest `auth` migration in this env) so the `User` table exists first.
+  - Forward: `get_user_model().objects.get_or_create(username=email, defaults={"email": email})`
+    then `set_password(...)` + `save()` — idempotent, safe to rerun.
+  - Email/username: `DJANGO_DEV_USER_EMAIL` env var, default
+    `"parent@home.com"` — deliberately matches the login form's existing
+    placeholder in `design/README.md` / `TEST_CONTRACT.md`, so the *future*
+    frontend-wiring task has an obvious credential to point the form at rather
+    than inventing one now.
+  - Password: `DJANGO_DEV_USER_PASSWORD` env var, default `"storyseed-dev"` —
+    same "dev-friendly default via env var" convention already used for
+    `POSTGRES_PASSWORD` in `config/settings/base.py`.
+  - Reverse: delete the user by username, so `migrate` backwards / test-DB
+    teardown stays clean.
+  - Add both new env vars to `backend/.env.example`, next to the existing
+    `POSTGRES_*` block.
+  
+  ## Serializer (`core/serializers.py`)
+  ```python
+  class LoginSerializer(serializers.Serializer):
+      email = serializers.CharField()
+      password = serializers.CharField(trim_whitespace=False)
+  ```
+  Field is named `email` (not Django's native `username`) to match the
+  frontend's `input[name="email"]` (`TEST_CONTRACT.md`) — the view maps
+  `email` → `authenticate(request, username=email, password=...)`, since the
+  seeded user's `username` *is* the email string. Keeps the translation at the
+  API boundary, same pattern as `valueId`/`styleId` in `books/serializers.py`.
+  
+  ## Views (`core/views.py`)
+  ```python
+  @api_view(["POST"])
+  @authentication_classes([])       # no session/basic auth expected pre-login
+  @permission_classes([AllowAny])
+  def login_view(request):
+      serializer = LoginSerializer(data=request.data)
+      serializer.is_valid(raise_exception=True)
+      user = authenticate(
+          request,
+          username=serializer.validated_data["email"],
+          password=serializer.validated_data["password"],
+      )
+      if user is None:
+          return Response({"detail": "Invalid credentials."}, status=400)
+      login(request, user)  # django.contrib.auth.login — establishes the session
+      return Response({"email": user.email})
+  
+  
+  @api_view(["POST"])
+  @permission_classes([IsAuthenticated])
+  def logout_view(request):
+      logout(request)
+      return Response(status=204)
+  ```
+  - `login_view` is deliberately `@csrf_exempt` in effect (via empty
+    `authentication_classes`, which skips DRF's `SessionAuthentication` and
+    its CSRF enforcement) — there is no session/CSRF cookie yet at the point a
+    client is trying to establish one. This is a known, common minimal
+    simplification for a first-cut session-login endpoint.
+    **Flagging, not solving:** the future frontend-wiring task will need a way
+    to fetch a CSRF cookie before POSTing to authenticated endpoints (e.g. a
+    `GET` that calls `django.middleware.csrf.get_token`, or accepting that
+    `logout_view` — which *does* go through normal `SessionAuthentication` and
+    thus normal CSRF enforcement — needs the token). Not deciding that here.
+  - `logout_view` requires `IsAuthenticated`, so calling it without a valid
+    session returns `401` (DRF's default for `IsAuthenticated` with no
+    authenticated user attempted).
+  - No rate limiting / lockout on failed login attempts — not asked for, and
+    out of scope for "minimal."
+  
+  ## URLs (`core/urls.py`)
+  ```python
+  urlpatterns = [
+      path("health/", views.health_check, name="health-check"),
+      path("auth/login/", views.login_view, name="auth-login"),
+      path("auth/logout/", views.logout_view, name="auth-logout"),
+      path("", include("books.urls")),
+  ]
+  ```
+  Final routes: `/api/auth/login/`, `/api/auth/logout/` (via
+  `config/urls.py`'s existing `/api/` mount — unchanged).
+  
+  ## Settings
+  No `REST_FRAMEWORK` block exists in `base.py` today, so DRF's defaults
+  (`SessionAuthentication` + `BasicAuthentication`, `AllowAny`) already apply
+  globally — no change needed there. **Not** adding a global
+  `DEFAULT_PERMISSION_CLASSES = [IsAuthenticated]`: that would lock down
+  `/api/books/`, which the previous task deliberately left `AllowAny` pending
+  this exact auth task, but *this* task's scope is the login/logout endpoints
+  only, not retrofitting permissions onto `BookViewSet`. Flagging gating
+  `/api/books/` behind auth as a reasonable next `TASKS.md` item rather than
+  deciding it here — doing it unilaterally would also break the existing
+  `books` DRF tests, which assume unauthenticated access.
+  
+  ## Tests (`core/tests.py`, appended — existing `HealthCheckTests` untouched)
+  Real Postgres test DB per project convention (no mocking); the seed
+  migration runs automatically against the test DB.
+  
+  - **`LoginTests`**
+    - `POST /api/auth/login/` with the seeded dev user's email/password → `200`,
+      body `{"email": "parent@home.com"}`, and the response sets a session
+      cookie (`response.cookies` contains `sessionid`).
+    - `POST /api/auth/login/` with wrong password → `400`,
+      `{"detail": "Invalid credentials."}`, no session cookie set.
+    - `POST /api/auth/login/` with unknown email → `400`, same shape.
+    - `POST /api/auth/login/` missing `password` → `400` (serializer
+      validation error).
+  - **`LogoutTests`**
+    - Log in first (`self.client.login(...)` or hitting the login endpoint),
+      then `POST /api/auth/logout/` → `204`; a subsequent authenticated-only
+      check (e.g. re-`POST /api/auth/logout/`) → `401`, proving the session
+      was actually cleared.
+    - `POST /api/auth/logout/` while not logged in → `401`.
+  - **`DevUserSeedTests`** (parallels `books/tests.py`'s
+    `ReferenceDataSeedTests`)
+    - Exactly one `User` exists after migration with the expected username;
+      `check_password` against the configured (or default) dev password
+      succeeds.
+  
+  ## Out of scope (explicitly, per task)
+  - No signup/registration endpoint.
+  - No password reset / change-password flow.
+  - No frontend changes — `app/login/page.tsx` keeps its simulated "any input
+    proceeds" behavior; wiring it to these endpoints (including handling the
+    CSRF-cookie bootstrap flagged above) is a separate task.
+  - No permission changes on `/api/books/` — flagged above as a follow-up, not
+    decided here.
+  - No token-based auth (JWT/DRF tokens) — `ARCHITECTURE.md` specifies Django
+    session auth.
+  - No rate limiting / login throttling.
+  
+  ## Verification (manual, part of implementation stage)
+  1. `cd backend && source .venv/bin/activate`
+  2. `python manage.py migrate` → confirm `core.0001_seed_dev_user` applies
+     cleanly against local Postgres and seeds one user.
+  3. `python manage.py shell -c "from django.contrib.auth import get_user_model; U=get_user_model(); print(U.objects.count(), U.objects.first().username)"` → `1 parent@home.com`.
+  4. `python manage.py test core`.
+  5. `python manage.py runserver`, then manually:
+     `curl -c cookies.txt -X POST localhost:8000/api/auth/login/ -H "Content-Type: application/json" -d '{"email":"parent@home.com","password":"storyseed-dev"}'` → `200`;
+     `curl -b cookies.txt -X POST localhost:8000/api/auth/logout/` → `204`;
+     repeating the logout call without `-b cookies.txt` → `401`.
+
+  </details>
+
