@@ -206,5 +206,196 @@ underneath once it succeeds — see `LOOP.md`'s "Artifacts & lifecycle".
 
   </details>
 
-- [ ] Add DRF serializers and REST endpoints (list/create/retrieve/update/delete) for `Book` under `/api/books/`, backed by the models from the previous task, matching the `Book`/`Section` JSON shape in `lib/types.ts` as closely as practical (note any deliberate deviations in the plan) — include DRF test coverage for each endpoint; the Next.js app is not wired to this API yet.
+- [x] Add DRF serializers and REST endpoints (list/create/retrieve/update/delete) for `Book` under `/api/books/`, backed by the models from the previous task, matching the `Book`/`Section` JSON shape in `lib/types.ts` as closely as practical (note any deliberate deviations in the plan) — include DRF test coverage for each endpoint; the Next.js app is not wired to this API yet.
+
+  <details><summary>plan</summary>
+
+  # Plan — DRF serializers & REST endpoints for `Book` under `/api/books/`
+  
+  ## Goal
+  Expose `Book`/`Section` (from `backend/books/models.py`, done in the prior task) over
+  a REST API — list/create/retrieve/update/delete on `/api/books/` — with DRF test
+  coverage. Wire format follows `lib/types.ts`'s `Book`/`Section` shapes as closely as
+  practical; deliberate deviations are called out below. **No frontend changes** —
+  `lib/storage.ts` keeps reading/writing `localStorage` until a later wiring task.
+  
+  ## Wire shape and deviations from `lib/types.ts`
+  
+  Response shape per book:
+  ```json
+  {
+    "id": "3fa8...uuid",
+    "valueId": "courage",
+    "value": "Courage",
+    "accent": "#2E6BFF",
+    "title": "Pip and the Whispering Forest",
+    "storyId": "forest",
+    "styleId": "crayon",
+    "sections": [
+      { "imageDesc": "...", "text": "..." }
+    ]
+  }
+  ```
+  - `value` (display name) and `accent` (hex) are read-only, derived from the `Value`
+    FK (`source="value.name"` / `source="value.color"`) — present in the response for
+    parity with the frontend `Book` type, but not accepted on write.
+  - `valueId` / `styleId` are the write inputs (`PrimaryKeyRelatedField(source="value")`
+    / `source="style"`), matching the frontend's naming (not Django's `value`/`style`).
+  - `id`: **deviation** — a UUID string, not `lib/data.ts`'s seed-style ids
+    (`"seed-courage-0"`). Already flagged in the models-task plan; frontend must treat
+    `id` as an opaque string either way, so no further translation needed here.
+  - `sections`: nested list, ordered by `order`, but `order` itself is **not** in the
+    wire shape (position in the array is the order, matching how the frontend indexes
+    `book.sections[i]`) — reconstructed from array index on write.
+  - `created_at`/`updated_at`: **not** in `lib/types.ts`'s `Book`, but included as
+    read-only `createdAt`/`updatedAt` — reasonable additions for a real API, additive
+    only, won't break frontend code that doesn't know about them.
+  - `storyId` is accepted as-is (`CharField`), not validated against `buildStories`
+    output — reconstructing full story text server-side is out of scope per the
+    models-task plan; the API only persists the chosen id + the (already-expanded)
+    sections the client sends.
+  
+  ## Files
+  
+  ```
+  backend/books/
+    serializers.py   # SectionSerializer, BookSerializer
+    views.py         # BookViewSet (ModelViewSet)
+    urls.py          # router registering "books" -> BookViewSet
+    tests.py         # append DRF APITestCase classes (existing model tests stay)
+  backend/core/urls.py   # add: path("", include("books.urls"))
+  ```
+  Rationale: mirrors the `core` app's `views.py`/`urls.py` split; `books/urls.py` is
+  included from `core/urls.py` (already mounted at `/api/` from `config/urls.py`), so
+  routes land at `/api/books/` without changing `config/urls.py`.
+  
+  ## Serializers (`books/serializers.py`)
+  
+  ```python
+  class SectionSerializer(serializers.ModelSerializer):
+      imageDesc = serializers.CharField(source="image_desc")
+      text = serializers.CharField()
+  
+      class Meta:
+          model = Section
+          fields = ["imageDesc", "text"]
+  
+  
+  class BookSerializer(serializers.ModelSerializer):
+      id = serializers.UUIDField(read_only=True)
+      valueId = serializers.PrimaryKeyRelatedField(source="value", queryset=Value.objects.all())
+      value = serializers.CharField(source="value.name", read_only=True)
+      accent = serializers.CharField(source="value.color", read_only=True)
+      storyId = serializers.CharField(source="story_id")
+      styleId = serializers.PrimaryKeyRelatedField(source="style", queryset=Style.objects.all())
+      sections = SectionSerializer(many=True)
+      createdAt = serializers.DateTimeField(source="created_at", read_only=True)
+      updatedAt = serializers.DateTimeField(source="updated_at", read_only=True)
+  
+      class Meta:
+          model = Book
+          fields = ["id", "valueId", "value", "accent", "title", "storyId",
+                    "styleId", "sections", "createdAt", "updatedAt"]
+  
+      def validate_sections(self, value):
+          if not value:
+              raise serializers.ValidationError("A book must have at least one section.")
+          return value
+  
+      def create(self, validated_data):
+          sections_data = validated_data.pop("sections")
+          book = Book.objects.create(**validated_data)
+          Section.objects.bulk_create([
+              Section(book=book, order=i, **s) for i, s in enumerate(sections_data)
+          ])
+          return book
+  
+      def update(self, instance, validated_data):
+          sections_data = validated_data.pop("sections", None)
+          for attr, val in validated_data.items():
+              setattr(instance, attr, val)
+          instance.save()
+          if sections_data is not None:
+              instance.sections.all().delete()
+              Section.objects.bulk_create([
+                  Section(book=instance, order=i, **s) for i, s in enumerate(sections_data)
+              ])
+          return instance
+  ```
+  - `sections` is required on create (step-3 gating already guarantees ≥1 page
+    client-side; the API enforces it too since it doesn't trust the client).
+  - On update, `sections` is optional — a `PATCH` that only changes `title`/`styleId`
+    doesn't need to resend pages; when present, full replace (delete + recreate) is the
+    simplest correct way to reconcile `order` and avoids a diffing algorithm the task
+    doesn't call for.
+  - `PrimaryKeyRelatedField` on `valueId`/`styleId` gives free 400s for unknown
+    ids (e.g. `"styleId": "nope"` → `{"styleId": ["Object with id=nope does not exist."]}`),
+    which is the DRF-idiomatic way to validate FK-backed writes.
+  
+  ## View (`books/views.py`)
+  ```python
+  class BookViewSet(viewsets.ModelViewSet):
+      queryset = Book.objects.select_related("value", "style").prefetch_related("sections")
+      serializer_class = BookSerializer
+  ```
+  `ModelViewSet` gives list/create/retrieve/update(`PUT`)/partial_update(`PATCH`)/destroy
+  for free — matches the task's "list/create/retrieve/update/delete" ask without
+  hand-writing five views. `select_related`/`prefetch_related` avoid N+1s on list.
+  
+  No auth/permission class added yet — the auth task is next in `TASKS.md` and is
+  explicitly scoped to add login/logout; `Book` has no `owner` field yet either (per
+  the models-task plan), so there's nothing to scope a permission check to. Leaving
+  `AllowAny` (DRF default) here rather than guessing at a permission shape.
+  
+  ## Routing (`books/urls.py`)
+  ```python
+  router = DefaultRouter()
+  router.register("books", BookViewSet, basename="book")
+  urlpatterns = router.urls
+  ```
+  `core/urls.py` adds `path("", include("books.urls"))` alongside its existing
+  `health/` path — final route: `/api/books/`, `/api/books/<uuid:pk>/`.
+  
+  ## Tests (`books/tests.py`)
+  Append `APITestCase` classes (existing `TestCase` model tests from the prior task
+  are untouched):
+  
+  - **`BookListCreateAPITests`**
+    - `GET /api/books/` empty → `200`, `[]`.
+    - `GET /api/books/` with 2 seeded books → `200`, both present, `sections` ordered,
+      `value`/`accent` correctly derived from the FK.
+    - `POST /api/books/` with valid payload (valueId/styleId/title/storyId/sections)
+      → `201`, row + sections persisted in DB, response echoes generated `id`.
+    - `POST` with empty `sections: []` → `400`.
+    - `POST` with unknown `valueId`/`styleId` → `400`.
+    - `POST` with missing `title` → `400`.
+  - **`BookRetrieveAPITests`**
+    - `GET /api/books/<id>/` existing → `200`, full shape incl. nested sections in order.
+    - `GET /api/books/<id>/` unknown UUID → `404`.
+  - **`BookUpdateAPITests`**
+    - `PATCH` title/styleId only (no `sections` key) → `200`, sections unchanged.
+    - `PUT` full payload with a different/reordered `sections` list → `200`, old
+      `Section` rows replaced, new ones persisted in the new order.
+  - **`BookDeleteAPITests`**
+    - `DELETE /api/books/<id>/` → `204`, book gone, cascade removes its `Section`s
+      (reusing the cascade behavior already proven at the model level).
+    - `DELETE` unknown UUID → `404`.
+  
+  All tests run against the real local Postgres test DB (project convention, no
+  mocking) — same note as `books/tests.py`'s existing header comment.
+  
+  ## Out of scope (explicitly, per task)
+  - No auth/permissions/ownership on `Book` — next `TASKS.md` item.
+  - No frontend wiring — `lib/storage.ts`, `app/`, `components/` untouched.
+  - No pagination/filtering/search on the list endpoint — not asked for, and the
+    library view doesn't need it at current book counts.
+  - No `StoryTemplate` endpoint — `story_id` is opaque to the API per the models plan.
+  
+  ## Verification (manual, part of implementation stage)
+  1. `cd backend && source .venv/bin/activate`
+  2. `python manage.py test books`
+  3. `python manage.py runserver` then manually: `curl -X POST localhost:8000/api/books/ -H "Content-Type: application/json" -d '{...}'`, `curl localhost:8000/api/books/`, `curl -X PATCH .../<id>/`, `curl -X DELETE .../<id>/`.
+
+  </details>
+
 - [ ] Add minimal real authentication to the Django backend: session-based login/logout endpoints (`/api/auth/login/`, `/api/auth/logout/`) backed by Django's built-in auth with a single seeded dev user (no self-serve signup flow) — backend-only; the Next.js login page keeps its current simulated flow until a separate task wires it up.
