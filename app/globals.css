@@ -1,0 +1,19 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Poppins", sans-serif;
+  color: #1e1b2e;
+  background: #fffdf7;
+}
+
+::selection {
+  background: #ffd23f;
+}
