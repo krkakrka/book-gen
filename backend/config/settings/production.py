@@ -46,6 +46,13 @@ CSRF_TRUSTED_ORIGINS = [
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
+# The frontend (Vercel) and backend (Railway) live on different domains, so
+# this is a cross-site request as far as cookies are concerned — base.py's
+# SameSite=Lax default would silently drop the session/CSRF cookies on every
+# credentialed fetch. SameSite=None requires Secure=True (set above).
+SESSION_COOKIE_SAMESITE = "None"
+CSRF_COOKIE_SAMESITE = "None"
+
 # Assumes TLS is terminated at a reverse proxy/load balancer in front of Django.
 SECURE_SSL_REDIRECT = True
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
