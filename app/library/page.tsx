@@ -6,29 +6,39 @@ import AppHeader from "@/components/AppHeader";
 import BookCard from "@/components/BookCard";
 import CreateTile from "@/components/CreateTile";
 import type { Book } from "@/lib/types";
-import { deleteBookById, loadOrSeedBooks, persistBooks } from "@/lib/storage";
+import { deleteBook, listBooks } from "@/lib/storage";
+import { logout } from "@/lib/api";
+import { useRequireSession } from "@/lib/useRequireSession";
 import { COLORS, FONTS, SHADOW } from "@/lib/tokens";
 
 const USER_NAME = "Maya";
 
 export default function LibraryPage() {
   const router = useRouter();
+  const ready = useRequireSession();
   const [books, setBooks] = useState<Book[]>([]);
 
   useEffect(() => {
-    setBooks(loadOrSeedBooks());
-  }, []);
+    if (!ready) return;
+    listBooks().then(setBooks);
+  }, [ready]);
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (!window.confirm("Delete this story from your library?")) return;
-    const updated = deleteBookById(books, id);
-    setBooks(updated);
-    persistBooks(updated);
+    await deleteBook(id);
+    setBooks((prev) => prev.filter((b) => b.id !== id));
   };
+
+  const handleSignOut = async () => {
+    await logout();
+    router.push("/login");
+  };
+
+  if (!ready) return null;
 
   return (
     <div data-testid="library-view" style={{ minHeight: "100vh", background: COLORS.canvas }}>
-      <AppHeader userName={USER_NAME} onSignOut={() => router.push("/login")} />
+      <AppHeader userName={USER_NAME} onSignOut={handleSignOut} />
 
       <main style={{ maxWidth: 1240, margin: "0 auto", padding: "clamp(24px,3.5vw,44px)" }}>
         <div

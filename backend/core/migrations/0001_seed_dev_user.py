@@ -6,7 +6,7 @@ from django.db import migrations
 
 def seed_dev_user(apps, schema_editor):
     email = os.environ.get("DJANGO_DEV_USER_EMAIL", "parent@home.com")
-    password = os.environ.get("DJANGO_DEV_USER_PASSWORD", "storyseed-dev")
+    password = os.environ.get("DJANGO_DEV_USER_PASSWORD", "secret")
     user, _ = get_user_model().objects.get_or_create(
         username=email, defaults={"email": email}
     )

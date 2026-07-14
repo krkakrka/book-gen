@@ -11,7 +11,8 @@ import StyleStep from "@/components/wizard/StyleStep";
 import ReviewStep from "@/components/wizard/ReviewStep";
 import type { Book, Section, StyleId } from "@/lib/types";
 import { buildStories, valueById } from "@/lib/data";
-import { loadOrSeedBooks, persistBooks, upsertBook } from "@/lib/storage";
+import { createBook, getBook, updateBook, type BookInput } from "@/lib/storage";
+import { useRequireSession } from "@/lib/useRequireSession";
 import { COLORS } from "@/lib/tokens";
 
 interface Draft {
@@ -68,22 +69,16 @@ interface CreateWizardProps {
 
 export default function CreateWizard({ mode, editId }: CreateWizardProps) {
   const router = useRouter();
+  const ready = useRequireSession();
   const [step, setStep] = useState(1);
   const [draft, setDraft] = useState<Draft>(emptyDraft);
-  const [bookId, setBookId] = useState<string>("");
 
   useEffect(() => {
-    if (mode === "edit" && editId) {
-      const books = loadOrSeedBooks();
-      const book = books.find((b) => b.id === editId);
-      if (book) {
-        setDraft(draftFromBook(book));
-        setBookId(book.id);
-      }
-    } else {
-      setBookId(`book-${Date.now()}`);
-    }
-  }, [mode, editId]);
+    if (!ready || mode !== "edit" || !editId) return;
+    getBook(editId).then((book) => {
+      if (book) setDraft(draftFromBook(book));
+    });
+  }, [ready, mode, editId]);
 
   const stories = useMemo(() => (draft.value ? buildStories(draft.value) : []), [draft.value]);
 
@@ -127,21 +122,20 @@ export default function CreateWizard({ mode, editId }: CreateWizardProps) {
     setDraft((d) => ({ ...d, sections: [...d.sections, { imageDesc: "", text: "" }] }));
   };
 
-  const handleAccept = () => {
+  const handleAccept = async () => {
     if (!draft.valueId || !draft.storyId || !draft.styleId) return;
-    const book: Book = {
-      id: bookId,
+    const input: BookInput = {
       valueId: draft.valueId,
-      value: draft.value,
-      accent: draft.accent,
       title: draft.title,
       storyId: draft.storyId,
       styleId: draft.styleId,
       sections: draft.sections,
     };
-    const books = loadOrSeedBooks();
-    const updated = upsertBook(books, book);
-    persistBooks(updated);
+    if (mode === "edit" && editId) {
+      await updateBook(editId, input);
+    } else {
+      await createBook(input);
+    }
     router.push("/library");
   };
 
@@ -156,6 +150,8 @@ export default function CreateWizard({ mode, editId }: CreateWizardProps) {
     imageDesc: "A cheerful illustration placeholder",
     text: "Story text will appear here.",
   };
+
+  if (!ready) return null;
 
   return (
     <div data-testid="wizard-view" style={{ minHeight: "100vh", background: COLORS.canvas, display: "flex", flexDirection: "column" }}>

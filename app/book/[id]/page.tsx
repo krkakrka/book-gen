@@ -7,22 +7,25 @@ import ReaderHeader from "@/components/ReaderHeader";
 import ReaderControls from "@/components/ReaderControls";
 import PageDots from "@/components/PageDots";
 import type { Book } from "@/lib/types";
-import { loadOrSeedBooks } from "@/lib/storage";
+import { getBook } from "@/lib/storage";
+import { useRequireSession } from "@/lib/useRequireSession";
 import { COLORS } from "@/lib/tokens";
 
 export default function ReaderPage() {
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
+  const ready = useRequireSession();
   const [book, setBook] = useState<Book | null>(null);
   const [pageIndex, setPageIndex] = useState(0);
 
   useEffect(() => {
-    const books = loadOrSeedBooks();
-    const found = books.find((b) => b.id === id) ?? null;
-    setBook(found);
+    if (!ready) return;
+    getBook(id).then(setBook);
     setPageIndex(0);
-  }, [id]);
+  }, [ready, id]);
+
+  if (!ready) return null;
 
   if (!book) {
     return (

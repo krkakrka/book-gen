@@ -722,11 +722,55 @@ underneath once it succeeds — see `LOOP.md`'s "Artifacts & lifecycle".
   </details>
 
 
-- [ ] Wire `/login` to the real backend: replace `LoginForm`'s simulated "any input proceeds" submit with a `POST /api/auth/login/` call (crediting the CSRF/cookie plumbing from the previous task), show an inline error for a `400` (invalid credentials) instead of navigating away, and only call `router.push("/library")` on a real `200`; wire `AppHeader`'s `signout-button` to `POST /api/auth/logout/` before navigating to `/login`. Update `PROJECT.md`'s "What's simulated vs. real" section in the same change, since it currently says auth is "a visual gate only" — that's no longer accurate once this lands. Does not touch `/api/books/` or `lib/storage.ts`.
+- [x] Wire `/login` to the real backend: replace `LoginForm`'s simulated "any input proceeds" submit with a `POST /api/auth/login/` call (crediting the CSRF/cookie plumbing from the previous task), show an inline error for a `400` (invalid credentials) instead of navigating away, and only call `router.push("/library")` on a real `200`; wire `AppHeader`'s `signout-button` to `POST /api/auth/logout/` before navigating to `/login`. Update `PROJECT.md`'s "What's simulated vs. real" section in the same change, since it currently says auth is "a visual gate only" — that's no longer accurate once this lands. Does not touch `/api/books/` or `lib/storage.ts`.
 
-- [ ] Add a route guard so `/library`, `/create`, `/edit/[id]`, and `/book/[id]` redirect to `/login` for anyone without a valid session (today they render freely for any deep link, since login is purely simulated) — needs a small new backend "who am I" endpoint (e.g. `GET /api/auth/session/` → `200` with the user, or `401`) since there's no way to inspect a Django session cookie from the client otherwise, plus a client-side check (layout-level effect or shared hook) that redirects on `401`. Builds on the login-wiring task; keep the check narrowly scoped to these four routes so `/login` itself doesn't loop.
+  <details><summary>plan</summary>
 
-- [ ] Gate `/api/books/` behind authentication: add `permission_classes = [IsAuthenticated]` (DRF session auth) to `BookViewSet` in `backend/books/views.py`, which currently has none and so falls back to DRF's global `AllowAny` default — this was explicitly flagged as a follow-up in the login/logout task's plan ("Flagging gating `/api/books/` behind auth as a reasonable next `TASKS.md` item rather than deciding it here") but never turned into an item. Update the existing `books/tests.py` `APITestCase`s, which currently assume unauthenticated access, to log in as the seeded dev user first. Backend-only — no frontend changes. Must land before the `lib/storage.ts` API-client task below, which already assumes `/api/books/` requires an authenticated, credentialed request.
+  Done as part of a combined pass implementing this task plus the 3 below it (route guard, books auth-gating, storage→API client), driven by a "deploy to production" request that surfaced these as blockers first. `LoginForm.tsx` now calls `lib/api.ts`'s `login()`, shows a `data-testid="signin-error"` message on failure, and disables the submit button while in flight. `app/library/page.tsx` wires sign-out to `lib/api.ts`'s `logout()` before navigating. `PROJECT.md`'s simulated-vs-real section updated. Also changed the seeded dev user's default password from `storyseed-dev` to `secret` (`.env.example`, migration fallback) to match `e2e/login.spec.ts`'s hardcoded credentials — flagged and confirmed with the user rather than silently decided.
 
-- [ ] Replace `lib/storage.ts`'s `localStorage`-backed persistence with a thin API client against `/api/books/` (list/create/retrieve/update/delete), translating the DRF wire shape (`valueId`/`styleId`/`value`/`accent`/`createdAt`/`updatedAt`) to and from `lib/types.ts`'s `Book`/`Section` shapes per `ARCHITECTURE.md`'s "frontend/backend models are related but not identical" note; update `app/library/page.tsx`, `app/book/[id]/page.tsx`, and `components/CreateWizard.tsx` (shared by `/create` and `/edit/[id]`) to call it instead of `loadOrSeedBooks`/`upsertBook`/`persistBooks`/`deleteBookById`. Flag rather than silently decide: whether the 3 sample books still get seeded client-side against an empty backend, or move to a backend seed migration like `Value`/`Style` did. Requires the auth/CSRF work above to be in place first since these become authenticated, credentialed requests.
+  </details>
+
+- [x] Add a route guard so `/library`, `/create`, `/edit/[id]`, and `/book/[id]` redirect to `/login` for anyone without a valid session (today they render freely for any deep link, since login is purely simulated) — needs a small new backend "who am I" endpoint (e.g. `GET /api/auth/session/` → `200` with the user, or `401`) since there's no way to inspect a Django session cookie from the client otherwise, plus a client-side check (layout-level effect or shared hook) that redirects on `401`. Builds on the login-wiring task; keep the check narrowly scoped to these four routes so `/login` itself doesn't loop.
+
+  <details><summary>plan</summary>
+
+  Added `GET /api/auth/session/` (`backend/core/views.py`), which checks `request.user.is_authenticated` manually and returns a clean `401`/`200` rather than DRF's usual 403-on-SessionAuthentication fallback. Added `lib/useRequireSession.ts`, a client hook that calls it and `router.replace`s to `/login` on no session; applied at the top of `app/library/page.tsx`, `app/book/[id]/page.tsx`, and inside `components/CreateWizard.tsx` (covers both `/create` and `/edit/[id]`, which share it).
+
+  Known gap, confirmed with the user rather than silently decided: `e2e/reader.spec.ts` and the "Edit wizard" test in `e2e/wizard.spec.ts` hardcode literal URLs like `/book/seed-courage-0`, but `Book.id` is a UUID (unchanged — see the storage/API-client task below), so those 6 tests are expected to stay red until updated to use real ids. The user has taken that on themselves.
+
+  Also added a Playwright auth-setup project (`e2e/auth.setup.ts`, new file, plus `playwright.config.ts` changes only) so the rest of the e2e suite runs pre-authenticated against this new guard, without editing any existing spec file's content.
+
+  </details>
+
+- [x] Gate `/api/books/` behind authentication: add `permission_classes = [IsAuthenticated]` (DRF session auth) to `BookViewSet` in `backend/books/views.py`, which currently has none and so falls back to DRF's global `AllowAny` default — this was explicitly flagged as a follow-up in the login/logout task's plan ("Flagging gating `/api/books/` behind auth as a reasonable next `TASKS.md` item rather than deciding it here") but never turned into an item. Update the existing `books/tests.py` `APITestCase`s, which currently assume unauthenticated access, to log in as the seeded dev user first. Backend-only — no frontend changes. Must land before the `lib/storage.ts` API-client task below, which already assumes `/api/books/` requires an authenticated, credentialed request.
+
+  <details><summary>plan</summary>
+
+  `BookViewSet.permission_classes = [IsAuthenticated]`. Added `BookAuthRequiredTests` (list/create/delete without auth → 401/403) and logged the seeded dev user in via `self.client.login(...)` in `setUp` for the existing list/retrieve/update/delete `APITestCase`s. `test_list_empty` and the seeded-books list test now explicitly `Book.objects.all().delete()` in setup, since the new seed migration below means the DB is no longer empty by default. All 39 backend tests green (`python manage.py test`).
+
+  </details>
+
+- [x] Replace `lib/storage.ts`'s `localStorage`-backed persistence with a thin API client against `/api/books/` (list/create/retrieve/update/delete), translating the DRF wire shape (`valueId`/`styleId`/`value`/`accent`/`createdAt`/`updatedAt`) to and from `lib/types.ts`'s `Book`/`Section` shapes per `ARCHITECTURE.md`'s "frontend/backend models are related but not identical" note; update `app/library/page.tsx`, `app/book/[id]/page.tsx`, and `components/CreateWizard.tsx` (shared by `/create` and `/edit/[id]`) to call it instead of `loadOrSeedBooks`/`upsertBook`/`persistBooks`/`deleteBookById`. Flag rather than silently decide: whether the 3 sample books still get seeded client-side against an empty backend, or move to a backend seed migration like `Value`/`Style` did. Requires the auth/CSRF work above to be in place first since these become authenticated, credentialed requests.
+
+  <details><summary>plan</summary>
+
+  Decided (flagged and confirmed with the user): seeding moved to a backend migration (`backend/books/migrations/0003_seed_books.py`, mirroring the `Value`/`Style` pattern), content shared with a new `backend/books/management/commands/reset_seed_data.py` command via `backend/books/seed_data.py`. `Book.id` stays a UUID (not changed to match `e2e/reader.spec.ts`'s literal seed-id strings — see the route-guard task's known-gap note above).
+
+  `lib/storage.ts` rewritten as an async API client (`listBooks`/`getBook`/`createBook`/`updateBook`/`deleteBook`) on top of a new `lib/api.ts` (fetch wrapper handling the CSRF cookie/header dance and `credentials: "include"`). `CreateWizard.tsx` no longer generates a client-side `book-${Date.now()}` id — new books get their id from the backend's create response.
+
+  Also had to fix e2e test-infra fallout from moving off per-context localStorage to a real shared Postgres DB: added `e2e/global-setup.ts` (resets to the 3 seed books before the whole run) and split `library.spec.ts`/`wizard.spec.ts` into their own Playwright projects, each with its own fresh `reset_seed_data` run chained so wizard's reset happens *after* library's mutations (its delete test) rather than racing/leaking into wizard's absolute book-count assertions. Also gave `library.spec.ts`'s "sign out" test (which performs a real backend logout) an isolated session/project so it can't invalidate the shared session used by every other spec file. `workers` forced to `1` — tests mutate shared backend state now, not per-context storage. All config/new-file changes; no existing spec file content edited.
+
+  </details>
+
+- [ ] Remove the "Create an account" link from the `/login` page (`components/LoginForm.tsx`) — there is no self-serve signup flow (backend only seeds a single dev user), so the link is dead UI.
+
+- [ ] Make the logo in `AppHeader` (`components/AppHeader.tsx`, the `Brand` component at line 21) link to `/` when clicked.
+
+- [ ] Remove the "Library" `<span>` badge from `AppHeader` (`components/AppHeader.tsx:23-35`).
+
+- [ ] Display the full username in `AppHeader`'s avatar/user area (`components/AppHeader.tsx:53`, currently `userName.charAt(0)`) instead of just the first character.
+
+- [ ] Replace the `window.confirm` browser dialog used for delete confirmation (`app/library/page.tsx:27`) with a proper UI modal matching the app's visual style (see `design/README.md` / `lib/tokens.ts`), instead of the native browser prompt.
+
+- [ ] Remove the "New story" button on `/library` (`app/library/page.tsx:74`, `data-testid="new-story-button"`) — it duplicates the `CreateTile` card (`app/library/page.tsx:100`) that already triggers the same `/create` navigation.
 

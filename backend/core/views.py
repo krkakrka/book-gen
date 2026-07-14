@@ -41,5 +41,16 @@ def logout_view(request):
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
+def session_view(request):
+    # Manual check (rather than permission_classes=[IsAuthenticated]) so an
+    # anonymous request gets a clean 401 instead of DRF's usual 403 fallback
+    # (see logout_view/core/tests.py for why SessionAuthentication yields 403).
+    if not request.user.is_authenticated:
+        return Response(status=401)
+    return Response({"email": request.user.email})
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
 def csrf_view(request):
     return Response({"detail": get_token(request)})

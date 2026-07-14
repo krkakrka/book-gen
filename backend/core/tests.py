@@ -7,7 +7,7 @@ from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
 DEV_USER_EMAIL = "parent@home.com"
-DEV_USER_PASSWORD = "storyseed-dev"
+DEV_USER_PASSWORD = "secret"
 
 
 class HealthCheckTests(APITestCase):
@@ -122,6 +122,24 @@ class CsrfTokenTests(APITestCase):
             "/api/auth/logout/", HTTP_X_CSRFTOKEN=csrf_token
         )
         self.assertEqual(logout_response.status_code, status.HTTP_204_NO_CONTENT)
+
+
+class SessionTests(APITestCase):
+    def test_session_while_not_logged_in_returns_401(self):
+        response = self.client.get("/api/auth/session/")
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_session_after_login_returns_200_with_email(self):
+        login_response = self.client.post(
+            "/api/auth/login/",
+            {"email": DEV_USER_EMAIL, "password": DEV_USER_PASSWORD},
+            format="json",
+        )
+        self.assertEqual(login_response.status_code, status.HTTP_200_OK)
+
+        response = self.client.get("/api/auth/session/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, {"email": DEV_USER_EMAIL})
 
 
 class CorsHeadersTests(APITestCase):

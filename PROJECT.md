@@ -26,13 +26,13 @@ Children ages 3–6 are the reader; parents/guardians are the ones logging in an
 - **Visual exploration:** three visual directions were designed and screened side by side before building the full app; the user chose Direction C, "Bold Pop."
 
 ## What's simulated vs. real (as of this prototype)
-- **Auth** is a visual gate only — no real account system.
-- **Storage** is client-side (localStorage), not a shared database — books won't sync across devices/browsers as-is.
+- **Auth** is real — session-based login/logout against a Django backend, with a single seeded dev user (no self-serve signup flow yet).
+- **Storage** is a real shared database — books are persisted via a Django REST Framework API backed by PostgreSQL, not localStorage, so libraries sync across devices/browsers for the logged-in user.
 - **Illustrations** are not generated or uploaded — pages show a colored placeholder plus the typed image description as a caption. Real artwork generation/upload is the main remaining gap before this is production-ready.
 - **Stories** offered in Step 2 are a small fixed set of templates per value, not an open-ended generation system (though the design assumes more stories/values could be added the same way).
 
 ## Suggested next steps (not yet built, would need sign-off)
-- Real authentication and a backend/database for books, so libraries sync across devices.
+- Self-serve signup/account management (today there's a single seeded dev user).
 - A real illustration pipeline (text-to-image generation from each page's image description, or an artist upload flow) to replace the placeholder art.
 - Expanding the story template library, or generating stories per value dynamically.
 - Native app packaging if this needs to run as an actual mobile app rather than a responsive web app.

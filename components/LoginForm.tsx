@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { login } from "@/lib/api";
 import { COLORS, FONTS, HOVER_MOTION, SHADOW } from "@/lib/tokens";
 
 export interface LoginFormProps {
@@ -10,10 +11,20 @@ export interface LoginFormProps {
 export default function LoginForm({ onSignIn }: LoginFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSignIn();
+    setError(null);
+    setSubmitting(true);
+    const result = await login(email, password);
+    setSubmitting(false);
+    if (result.ok) {
+      onSignIn();
+    } else {
+      setError(result.error);
+    }
   };
 
   return (
@@ -71,9 +82,18 @@ export default function LoginForm({ onSignIn }: LoginFormProps) {
           }}
         />
       </label>
+      {error && (
+        <p
+          data-testid="signin-error"
+          style={{ color: COLORS.pink, fontFamily: FONTS.body, fontWeight: 600, fontSize: 14, margin: "0 0 16px" }}
+        >
+          {error}
+        </p>
+      )}
       <button
         type="submit"
         data-testid="signin-button"
+        disabled={submitting}
         style={{
           width: "100%",
           padding: "14px 24px",
@@ -84,7 +104,8 @@ export default function LoginForm({ onSignIn }: LoginFormProps) {
           fontFamily: FONTS.display,
           fontWeight: 600,
           fontSize: 18,
-          cursor: "pointer",
+          cursor: submitting ? "default" : "pointer",
+          opacity: submitting ? 0.7 : 1,
           boxShadow: HOVER_MOTION.default.boxShadow,
         }}
         onMouseEnter={(e) => {
