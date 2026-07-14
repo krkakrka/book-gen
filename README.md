@@ -47,6 +47,8 @@ Key endpoints (mounted under `/api/`):
 
 Run the backend test suite with `python manage.py test` from `backend/`.
 
+`config.settings.local` (the default `DJANGO_SETTINGS_MODULE`, set in `manage.py`/`wsgi.py`/`asgi.py`) is dev-only: `DEBUG=True`, `ALLOWED_HOSTS=["*"]`, insecure cookie/secret-key fallbacks, and it seeds a weak-password dev user via migration. A real deployment must set `DJANGO_SETTINGS_MODULE=config.settings.production`, which requires `DJANGO_SECRET_KEY`, `DJANGO_ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`, and `CSRF_TRUSTED_ORIGINS` to be set explicitly (raises at startup otherwise), forces secure cookies + HTTPS redirect/HSTS, and skips the dev-user seed.
+
 ## Project status
 
 This repo is a **tests-first "red-spec" harness**: the test suite is written and intentionally failing, and the task is implementing `app/` and `components/` until it's green. See `CLAUDE.md` for the full agent-facing instructions and SDLC.

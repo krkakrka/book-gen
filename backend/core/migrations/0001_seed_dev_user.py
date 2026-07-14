@@ -1,10 +1,16 @@
 import os
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import migrations
 
 
 def seed_dev_user(apps, schema_editor):
+    # This fixture seeds a known, weak password — never run it against a
+    # production settings module (config.settings.production sets
+    # SEED_DEV_USER=False).
+    if not getattr(settings, "SEED_DEV_USER", True):
+        return
     email = os.environ.get("DJANGO_DEV_USER_EMAIL", "parent@home.com")
     password = os.environ.get("DJANGO_DEV_USER_PASSWORD", "secret")
     user, _ = get_user_model().objects.get_or_create(
@@ -15,6 +21,8 @@ def seed_dev_user(apps, schema_editor):
 
 
 def unseed_dev_user(apps, schema_editor):
+    if not getattr(settings, "SEED_DEV_USER", True):
+        return
     email = os.environ.get("DJANGO_DEV_USER_EMAIL", "parent@home.com")
     get_user_model().objects.filter(username=email).delete()
 

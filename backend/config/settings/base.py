@@ -112,3 +112,10 @@ CSRF_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_SECURE = False  # plain http://localhost in dev
 CSRF_COOKIE_SECURE = False
 CSRF_COOKIE_HTTPONLY = False  # must be JS-readable so the frontend can echo it in X-CSRFToken
+
+# Controls core.migrations.0001_seed_dev_user. True here (and in local.py, by
+# inheritance) so dev/test environments get the fixture; production.py turns
+# this off. Deliberately not keyed on DEBUG: Django's test runner forces
+# DEBUG=False while applying migrations for the test database, which would
+# otherwise skip the seed and break tests that depend on it.
+SEED_DEV_USER = True
