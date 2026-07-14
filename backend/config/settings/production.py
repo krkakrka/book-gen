@@ -27,6 +27,12 @@ ALLOWED_HOSTS = [
     for host in _require_env("DJANGO_ALLOWED_HOSTS").split(",")
     if host.strip()
 ]
+# Railway's internal healthcheck probe hits the container via its private
+# network hostname, not the public domain above — without this, every
+# healthcheck gets rejected as a DisallowedHost and the deploy never goes live.
+_railway_private_domain = os.environ.get("RAILWAY_PRIVATE_DOMAIN")
+if _railway_private_domain:
+    ALLOWED_HOSTS.append(_railway_private_domain)
 
 # Unlike base.py, these have no localhost fallback here — a real deploy must
 # set them explicitly.
@@ -56,6 +62,11 @@ CSRF_COOKIE_SAMESITE = "None"
 # Assumes TLS is terminated at a reverse proxy/load balancer in front of Django.
 SECURE_SSL_REDIRECT = True
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+# Railway's internal healthcheck probe connects over plain HTTP directly to
+# the container (it doesn't go through the edge proxy that sets the header
+# above), so without this exemption the redirect below would 301 it instead
+# of returning 200, and the deploy would never pass healthcheck.
+SECURE_REDIRECT_EXEMPT = [r"^api/health/$"]
 SECURE_HSTS_SECONDS = 60 * 60 * 24 * 30  # 30 days
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
