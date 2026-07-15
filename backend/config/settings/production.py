@@ -27,13 +27,12 @@ ALLOWED_HOSTS = [
     for host in _require_env("DJANGO_ALLOWED_HOSTS").split(",")
     if host.strip()
 ]
-# Railway's internal healthcheck probe hits the container over the loopback
-# interface (confirmed: a direct request to 127.0.0.1 gets rejected as
-# DisallowedHost) and possibly its private network hostname too — neither is
-# reachable from the public internet, so allowing them isn't a security
-# downgrade. Without this, the healthcheck never passes and the deploy never
-# goes live.
-ALLOWED_HOSTS += ["127.0.0.1", "localhost"]
+# Railway's healthcheck probe sends Host: healthcheck.railway.app (confirmed
+# via Railway's own deploy diagnostics — 127.0.0.1/localhost were a guess
+# based on a loopback test and didn't match the probe's actual Host header,
+# so the healthcheck kept getting rejected as DisallowedHost). Not reachable
+# from the public internet, so allowing it isn't a security downgrade.
+ALLOWED_HOSTS += ["healthcheck.railway.app", "127.0.0.1", "localhost"]
 _railway_private_domain = os.environ.get("RAILWAY_PRIVATE_DOMAIN")
 if _railway_private_domain:
     ALLOWED_HOSTS.append(_railway_private_domain)
