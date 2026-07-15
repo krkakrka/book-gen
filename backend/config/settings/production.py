@@ -76,3 +76,16 @@ SECURE_HSTS_PRELOAD = True
 
 # Never seed the known-password dev login outside dev/test.
 SEED_DEV_USER = False
+
+# Django's default logging config only reports 500s via email to ADMINS
+# (unconfigured here) when DEBUG=False — exceptions otherwise vanish rather
+# than reaching stdout/Railway's logs. Route them to the console instead.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "loggers": {
+        "django": {"handlers": ["console"], "level": "INFO"},
+        "django.request": {"handlers": ["console"], "level": "ERROR", "propagate": False},
+    },
+}
